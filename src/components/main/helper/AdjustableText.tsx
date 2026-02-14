@@ -59,7 +59,7 @@ function AdjustableText({
                 onTap={onSelect as any}
                 ref={textRef}
 
-                textDecoration={"line-through"}
+                // textDecoration={"line-through"}
 
                 {...shapeProps}
 
