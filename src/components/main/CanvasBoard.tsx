@@ -37,7 +37,7 @@ function CanvasBoard() {
 
     const { t } = useTranslation();
 
-    const stageRef = useRef<any>(null);
+    const stageRef = useRef<Konva.Stage>(null);
     const [opened, { toggle, close }] = useDisclosure();
 
     // History Sticker content
