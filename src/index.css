@@ -1,16 +1,22 @@
 @font-face {
-    font-family: 'YurukaStd';
-    src: local('YurukaStd'), url(./fonts/YurukaStd.woff2) format('woff2');
+  font-family: "YurukaStd";
+  src:
+    local("YurukaStd"),
+    url(./fonts/YurukaStd.woff2) format("woff2");
 }
 
 @font-face {
-    font-family: 'SSFangTangTi';
-    src: local('SSFangTangTi'), url(./fonts/ShangShouFangTangTi.woff2) format('woff2');
+  font-family: "SSFangTangTi";
+  src:
+    local("SSFangTangTi"),
+    url(./fonts/ShangShouFangTangTi.woff2) format("woff2");
 }
 
 @font-face {
-    font-family: 'ChillRoundGothic_Bold';
-    src: local('ChillRoundGothic_Bold'), url(./fonts/ChillRoundGothic_Bold.woff) format('woff');
+  font-family: "ChillRoundGothic_Bold";
+  src:
+    local("ChillRoundGothic_Bold"),
+    url(./fonts/ChillRoundGothic_Bold.woff) format("woff");
 }
 
 /* @font-face {

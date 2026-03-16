@@ -1,6 +1,6 @@
 import { Text, Divider } from "@mantine/core";
 import { IconClipboard } from "@tabler/icons-react";
-import Markdown from 'markdown-to-jsx'
+import Markdown from "markdown-to-jsx";
 
 const contentOne = `
 *(English Only)*
@@ -18,22 +18,20 @@ https://github.com/TheOriginalAyaka/sekai-stickers
 - @akiyamamizuki (Focked version)    
 - @ayaka (Original)   
 
-`
+`;
 
 function GeneralInformations() {
-    return (
-        <>
-            <Text fz={32} fw={600} ta="left" mb={8}>
-                <IconClipboard /> General Informations
-            </Text>
+  return (
+    <>
+      <Text fz={32} fw={600} ta="left" mb={8}>
+        <IconClipboard /> General Informations
+      </Text>
 
-            <Divider my="md" />
+      <Divider my="md" />
 
-            <Markdown>
-                {contentOne}
-            </Markdown>
-        </>
-    )
+      <Markdown>{contentOne}</Markdown>
+    </>
+  );
 }
 
-export default GeneralInformations
+export default GeneralInformations;
