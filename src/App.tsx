@@ -20,29 +20,29 @@ import Layout from "./components/common/Layout";
 const MainPage = lazy(() => import("./pages/MainPage"));
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout />,
-    children: [
-      {
+    {
         path: "/",
-        element: <MainPage />,
-      },
-    ],
-  },
+        element: <Layout />,
+        children: [
+            {
+                path: "/",
+                element: <MainPage />,
+            },
+        ],
+    },
 ]);
 
 function App() {
-  return (
-    <MantineProvider>
-      <Suspense fallback={<LoadingPage />}>
-        <ModalsProvider>
-          <Notifications />
-          <RouterProvider router={router} />
-        </ModalsProvider>
-      </Suspense>
-    </MantineProvider>
-  );
+    return (
+        <MantineProvider>
+            <Suspense fallback={<LoadingPage />}>
+                <ModalsProvider>
+                    <Notifications />
+                    <RouterProvider router={router} />
+                </ModalsProvider>
+            </Suspense>
+        </MantineProvider>
+    );
 }
 
 export default App;

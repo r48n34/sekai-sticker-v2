@@ -18,17 +18,17 @@ Save Sticker to clipboard
 `;
 
 function Shortcuts() {
-  return (
-    <>
-      <Text fz={32} fw={600} ta="left" mb={8}>
-        <IconTableShortcut /> Shortcuts
-      </Text>
+    return (
+        <>
+            <Text fz={32} fw={600} ta="left" mb={8}>
+                <IconTableShortcut /> Shortcuts
+            </Text>
 
-      <Divider my="md" />
+            <Divider my="md" />
 
-      <Markdown>{contentOne}</Markdown>
-    </>
-  );
+            <Markdown>{contentOne}</Markdown>
+        </>
+    );
 }
 
 export default Shortcuts;
