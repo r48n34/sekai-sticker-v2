@@ -26,7 +26,7 @@ function RemoveAllHistory() {
     return (
         <Tooltip label={t("Remove All saved sticker")}>
             <ActionIcon
-                variant="light"
+                variant="default"
                 color="red"
                 aria-label={t("Remove All saved sticker")}
                 onClick={() => openRemoveAllStickerModal()}

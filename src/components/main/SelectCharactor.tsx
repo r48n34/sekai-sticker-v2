@@ -2,6 +2,7 @@ import { useDisclosure } from "@mantine/hooks";
 import {
     Drawer,
     Grid,
+    Menu,
     NavLink,
     UnstyledButton,
     ScrollArea,
@@ -23,20 +24,29 @@ import { useTranslation } from "react-i18next";
 
 interface SelectCharactorProps {
     title?: string;
-    openComp?: "NavLink" | "Button";
+    openComp?: "NavLink" | "Button" | "MenuItem" | "None";
     addStickerCb: (sticker: StickerChatactor) => void;
+    opened?: boolean;
+    onOpen?: () => void;
+    onClose?: () => void;
 }
 
 function SelectCharactor({
     title = "Add Charactor",
     openComp = "NavLink",
     addStickerCb,
+    opened: controlledOpened,
+    onOpen,
+    onClose,
 }: SelectCharactorProps) {
     const { t } = useTranslation();
 
     const [filledList, setFilledList] = useState<StickerChatactor[]>([]);
     const [searchString, setSearchString] = useState<string[]>([]);
-    const [opened, { open, close }] = useDisclosure(false);
+    const [internalOpened, { open: openInternal, close: closeInternal }] = useDisclosure(false);
+    const opened = controlledOpened ?? internalOpened;
+    const open = onOpen ?? openInternal;
+    const close = onClose ?? closeInternal;
 
     useEffect(() => {
         if (searchString.length <= 0) {
@@ -167,6 +177,12 @@ function SelectCharactor({
                 <Button leftSection={<IconAdjustments />} variant="light" onClick={() => open()}>
                     {t("Change Charactor")}
                 </Button>
+            )}
+
+            {openComp === "MenuItem" && (
+                <Menu.Item leftSection={<IconSticker size={14} />} onClick={() => open()}>
+                    {title}
+                </Menu.Item>
             )}
         </>
     );

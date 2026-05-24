@@ -1,5 +1,5 @@
 import { useDisclosure } from "@mantine/hooks";
-import { Drawer, Grid, NavLink, Button, Box, Group, Text, ThemeIcon } from "@mantine/core";
+import { Drawer, Grid, NavLink, Button, Box, Group, Text, ThemeIcon, Menu } from "@mantine/core";
 import { IconAdjustments, IconSticker } from "@tabler/icons-react";
 import useHistoryStickerStore from "../../store/historyStickerStore";
 import { CONFIGS, StickerObject } from "../../utils/createSticker";
@@ -11,18 +11,27 @@ import { useTranslation } from "react-i18next";
 
 interface SelectHistoryStickerProps {
     title?: string;
-    openComp?: "NavLink" | "Button";
+    openComp?: "NavLink" | "Button" | "MenuItem" | "None";
     setStickerCb: (sticker: StickerObject[]) => void;
+    opened?: boolean;
+    onOpen?: () => void;
+    onClose?: () => void;
 }
 
 function SelectHistorySticker({
     title = "View Saved",
     openComp = "NavLink",
     setStickerCb,
+    opened: controlledOpened,
+    onOpen,
+    onClose,
 }: SelectHistoryStickerProps) {
     const { t } = useTranslation();
 
-    const [opened, { open, close }] = useDisclosure(false);
+    const [internalOpened, { open: openInternal, close: closeInternal }] = useDisclosure(false);
+    const opened = controlledOpened ?? internalOpened;
+    const open = onOpen ?? openInternal;
+    const close = onClose ?? closeInternal;
     const histStickerArray = useHistoryStickerStore((state) => state.histStickerArray);
 
     function selectAndClose(ind: number) {
@@ -30,8 +39,8 @@ function SelectHistorySticker({
         close();
 
         notifications.show({
-            title: "Sticker loaded",
-            message: "The saved sticker is loaded to your board.",
+            title: t("Sticker loaded"),
+            message: t("The saved sticker is loaded to your board."),
         });
     }
 
@@ -105,6 +114,12 @@ function SelectHistorySticker({
                 <Button leftSection={<IconAdjustments />} variant="light" onClick={() => open()}>
                     {t("View Saved Stickers")}
                 </Button>
+            )}
+
+            {openComp === "MenuItem" && (
+                <Menu.Item leftSection={<IconSticker size={14} />} onClick={() => open()}>
+                    {title}
+                </Menu.Item>
             )}
         </>
     );

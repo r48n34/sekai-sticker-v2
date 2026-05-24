@@ -1,12 +1,12 @@
-import { Stage, Layer } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import { CONFIGS, StickerObject } from "../../../utils/createSticker";
 import AdjustableText from "../helper/AdjustableText";
 import CanvasTransImage from "../helper/CanvasTransImage";
 import { useRef } from "react";
-import { Tooltip, ActionIcon, Container, UnstyledButton, Space, Group, Text } from "@mantine/core";
-import { IconDownload, IconCopyPlus } from "@tabler/icons-react";
+import { ActionIcon, Container, Group, Space, Text, Tooltip, UnstyledButton } from "@mantine/core";
+import { IconCopyPlus, IconDownload } from "@tabler/icons-react";
 import { copyImages } from "../../../utils/copyUtils";
-import { timer, downloadFile, dataURLToBlob } from "../../../utils/downloadUtils";
+import { dataURLToBlob, downloadFile, timer } from "../../../utils/downloadUtils";
 import { useTranslation } from "react-i18next";
 import { notifications } from "@mantine/notifications";
 
@@ -21,13 +21,29 @@ function ViewCanvasComp({ stickerContent, clickCb }: ViewCanvasCompProps) {
 
     const maxX = Math.max(...stickerContent.map((v) => v.x + (v.width || 0)));
     const maxY = Math.max(...stickerContent.map((v) => v.y + (v.height || 0)));
+    const normalizeDate = (value: unknown): Date => {
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+            return value;
+        }
+
+        if (typeof value === "string" || typeof value === "number") {
+            const parsed = new Date(value);
+            if (!Number.isNaN(parsed.getTime())) {
+                return parsed;
+            }
+        }
+
+        return new Date();
+    };
 
     return (
         <>
             <Container>
                 <UnstyledButton
                     onClick={() => {
-                        !!clickCb && clickCb();
+                        if (clickCb) {
+                            clickCb();
+                        }
                     }}
                 >
                     <Stage
@@ -144,7 +160,7 @@ function ViewCanvasComp({ stickerContent, clickCb }: ViewCanvasCompProps) {
                     <Text c="dimmed" ta="center" fz={12}>
                         {t("Last Update")}:{" "}
                         {stickerContent
-                            .map((v) => (v.updatedDate ? v.updatedDate : new Date()))
+                            .map((v) => normalizeDate(v.updatedDate))
                             .sort((a, b) => b.getTime() - a.getTime())[0]
                             .toUTCString()}
                     </Text>

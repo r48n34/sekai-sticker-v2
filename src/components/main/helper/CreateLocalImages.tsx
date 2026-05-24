@@ -1,11 +1,11 @@
 import { IconImageInPicture } from "@tabler/icons-react";
-import { NavLink, FileButton, ThemeIcon } from "@mantine/core";
+import { NavLink, FileButton, Menu, ThemeIcon } from "@mantine/core";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
 type CreateLocalImagesProps = {
     title?: string;
-    openComp?: "NavLink" | "Button";
+    openComp?: "NavLink" | "Button" | "MenuItem";
     callBackImageURL: (imageURL: string) => void;
 };
 
@@ -14,37 +14,34 @@ function CreateLocalImages({
     openComp = "NavLink",
     callBackImageURL,
 }: CreateLocalImagesProps) {
-    const [files, setFiles] = useState<File[]>([]);
     const resetRef = useRef<() => void>(null);
 
-    useEffect(() => {
-        (async () => {
-            if (files.length >= 1) {
-                for (const f of files) {
-                    try {
-                        await submitForm(f);
-                    } catch (error) {
-                        console.log(error);
-                    }
-                }
-
-                setFiles([]);
-                resetRef.current?.();
-            }
-        })();
-    }, [files]);
-
-    async function submitForm(imageFile: File) {
-        const arrayBuffer = await imageFile!.arrayBuffer();
-        const fileUrl = URL.createObjectURL(new Blob([arrayBuffer]));
+    function submitForm(imageFile: File) {
+        const fileUrl = URL.createObjectURL(imageFile);
         callBackImageURL(fileUrl);
+    }
+
+    function handleFileChange(nextFiles: File[] | null) {
+        if (!nextFiles || nextFiles.length === 0) {
+            return;
+        }
+
+        for (const file of nextFiles) {
+            try {
+                submitForm(file);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        resetRef.current?.();
     }
 
     return (
         <>
             {openComp === "NavLink" && (
                 <FileButton
-                    onChange={setFiles}
+                    onChange={handleFileChange}
                     accept="image/png,image/jpeg"
                     multiple
                     resetRef={resetRef}
@@ -57,11 +54,27 @@ function CreateLocalImages({
                                     <IconImageInPicture size="1rem" />
                                 </ThemeIcon>
                             }
-                            // rightSection={
-                            //     <IconChevronRight size="0.8rem" stroke={1.5} className="mantine-rotate-rtl" />
-                            // }
                             {...props}
                         />
+                    )}
+                </FileButton>
+            )}
+
+            {openComp === "MenuItem" && (
+                <FileButton
+                    onChange={handleFileChange}
+                    accept="image/png,image/jpeg"
+                    multiple
+                    resetRef={resetRef}
+                >
+                    {(props) => (
+                        <Menu.Item
+                            leftSection={<IconImageInPicture size={14} />}
+                            closeMenuOnClick={false}
+                            {...props}
+                        >
+                            {title}
+                        </Menu.Item>
                     )}
                 </FileButton>
             )}

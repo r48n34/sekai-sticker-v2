@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
     AppShell,
-    Burger,
+    Button,
     Box,
     Card,
     Container,
     Group,
+    Menu,
     Text,
-    NavLink,
     TextInput,
     ColorInput,
     ActionIcon,
@@ -15,15 +15,12 @@ import {
     Space,
     Slider,
     Divider,
-    ScrollArea,
     Grid,
     Select,
-    ThemeIcon,
-    Badge,
 } from "@mantine/core";
 import { Stage, Layer } from "react-konva";
 import Konva from "konva";
-import { useListState, useDisclosure, useHotkeys } from "@mantine/hooks";
+import { useDisclosure, useListState, useHotkeys } from "@mantine/hooks";
 
 import AdjustableText from "./helper/AdjustableText";
 import CanvasTransImage from "./helper/CanvasTransImage";
@@ -37,7 +34,10 @@ import {
     IconCopyPlus,
     IconDimensions,
     IconDownload,
+    IconFileSmile,
     IconLetterCaseUpper,
+    IconLink,
+    IconNotebook,
     IconPlus,
     IconRulerMeasure,
     IconSticker,
@@ -81,7 +81,6 @@ function CanvasBoard() {
     const { t } = useTranslation();
 
     const stageRef = useRef<Konva.Stage>(null);
-    const [opened, { toggle, close }] = useDisclosure();
 
     // History Sticker content
     const stickerStore = useCurrentStickerStore((state) => state);
@@ -93,6 +92,14 @@ function CanvasBoard() {
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const selectedShape = stickerContent.find((v) => v.id === selectedId);
+    const [emojiOpened, { open: openEmoji, close: closeEmoji }] = useDisclosure(false);
+    const [newStickerOpened, { open: openNewSticker, close: closeNewSticker }] =
+        useDisclosure(false);
+    const [externalImageOpened, { open: openExternalImage, close: closeExternalImage }] =
+        useDisclosure(false);
+    const [savedStickerOpened, { open: openSavedSticker, close: closeSavedSticker }] =
+        useDisclosure(false);
+    const [learnMoreOpened, { open: openLearnMore, close: closeLearnMore }] = useDisclosure(false);
 
     // Check deselect click
     function checkDeselect(
@@ -111,9 +118,9 @@ function CanvasBoard() {
 
     async function callBackImageURL(imageURL: string) {
         try {
+            console.log("Start to load image", imageURL);
             stickerContentHandlers.append(await createExternalImages(imageURL));
 
-            close();
             notifications.show({
                 title: t("Success"),
                 message: t("Success to import images"),
@@ -140,6 +147,22 @@ function CanvasBoard() {
         }
         const newSticker = duplicateNewObject(selectedShape);
         stickerContentHandlers.append(newSticker);
+    }
+
+    function addDefaultTextLayer() {
+        const currentSticker = stickerContent.filter((v) => v.format === "image");
+        let [defaultText, textColor] = ["Hello", "red"];
+
+        if (currentSticker.length >= 1) {
+            const targetStickerInd = currentSticker.length - 1;
+            const stickerInfo = chatactorList.find(
+                (v) => v.img === currentSticker[targetStickerInd].content,
+            );
+            defaultText = stickerInfo ? stickerInfo.defaultText.text : "Hello";
+            textColor = stickerInfo ? stickerInfo.color : "red";
+        }
+
+        stickerContentHandlers.append(createText(defaultText, textColor));
     }
 
     // Download current selected sticker to PNG
@@ -233,192 +256,200 @@ function CanvasBoard() {
                     callBackImageURL(imageURL);
                 }}
             />
-
-            <AppShell
-                // withBorder={false}
-                layout="alt"
-                navbar={{
-                    width: 230,
-                    breakpoint: "sm",
-                    collapsed: { mobile: !opened },
+            <SelectEmoji
+                openComp="None"
+                opened={emojiOpened}
+                onClose={closeEmoji}
+                title={t("Add Emoji (Text)")}
+                addEmojiCb={(emoji: EmojiClickData) => {
+                    stickerContentHandlers.append(createText(emoji.emoji));
                 }}
-                // aside={{ width: 150, breakpoint: '1', collapsed: { desktop: false, mobile: true } }}
-                padding="md"
-            >
+            />
+            <SelectCharactor
+                openComp="None"
+                opened={newStickerOpened}
+                onClose={closeNewSticker}
+                title={t("Add New Sticker")}
+                addStickerCb={async (v) => {
+                    stickerContentHandlers.append(await createImages(v.img));
+                }}
+            />
+            <CreateExternalImages
+                openComp="None"
+                opened={externalImageOpened}
+                onClose={closeExternalImage}
+                title={t("Upload URL Image")}
+                callBackImageURL={(imageURL: string) => {
+                    callBackImageURL(imageURL);
+                }}
+            />
+            <SelectHistorySticker
+                openComp="None"
+                opened={savedStickerOpened}
+                onClose={closeSavedSticker}
+                title={t("View Saved Stickers")}
+                setStickerCb={(sticker) => {
+                    stickerContentHandlers.setState(sticker);
+                }}
+            />
+            <LearnMore opened={learnMoreOpened} onClose={closeLearnMore} hideTrigger />
+
+            <AppShell padding="md">
                 <AppShell.Header>
-                    <Group h="100%" px="md">
-                        <Burger
-                            opened={opened}
-                            onClick={toggle}
-                            hiddenFrom="sm"
-                            size="sm"
-                            mt={12}
-                            mb={12}
-                        />
+                    <Group
+                        h="100%"
+                        px="md"
+                        gap="xs"
+                        wrap="nowrap"
+                        justify="space-between"
+                        style={{
+                            // background:
+                            //     "linear-gradient(180deg, rgb(88, 150, 204) 0%, rgb(60, 126, 186) 100%)",
+                            // color: "white",
+                        }}
+                    >
+                        <Group gap="xs" wrap="nowrap">
+                            <Text fw={700} px={8} mt={4}>
+                                <IconSticker size={16} />
+                            </Text>
+                            <Menu
+                                // trigger="hover"
+                                openDelay={80}
+                                closeDelay={100}
+                                withinPortal={false}
+                            >
+                                <Menu.Target>
+                                    <Button variant="subtle" color="gray" size="compact-sm">
+                                        <Group gap={6} wrap="nowrap">
+                                            <IconDownload size={14} />
+                                            <span>{t("Export")}</span>
+                                        </Group>
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={<IconDownload size={14} />}
+                                        onClick={() => downloadCurrentPng()}
+                                    >
+                                        {t("Download PNG")}
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        leftSection={<IconCopyPlus size={14} />}
+                                        onClick={() => copyCurrentPng()}
+                                    >
+                                        {t("Copy PNG to clipboard")}
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
+
+                            <Menu
+                                // trigger="hover"
+                                openDelay={80}
+                                closeDelay={100}
+                                withinPortal={false}
+                            >
+                                <Menu.Target>
+                                    <Button variant="subtle" color="gray" size="compact-sm">
+                                        <Group gap={6} wrap="nowrap">
+                                            <IconPlus size={14} />
+                                            <span>{t("Insert")}</span>
+                                        </Group>
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={<IconPlus size={14} />}
+                                        onClick={() => addDefaultTextLayer()}
+                                    >
+                                        {t("Add Text")}
+                                    </Menu.Item>
+
+                                    <Menu.Item
+                                        leftSection={<IconFileSmile size={14} />}
+                                        onClick={openEmoji}
+                                    >
+                                        {t("Add Emoji (Text)")}
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        leftSection={<IconSticker size={14} />}
+                                        onClick={openNewSticker}
+                                    >
+                                        {t("Add New Sticker")}
+                                    </Menu.Item>
+                                    <CreateLocalImages
+                                        openComp="MenuItem"
+                                        title={t("Upload local Image")}
+                                        callBackImageURL={(imageURL: string) => {
+                                            callBackImageURL(imageURL);
+                                        }}
+                                    />
+                                    <Menu.Item
+                                        leftSection={<IconLink size={14} />}
+                                        onClick={openExternalImage}
+                                    >
+                                        {t("Upload URL Image")}
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
+
+                            <Menu
+                                // trigger="hover"
+                                openDelay={80}
+                                closeDelay={100}
+                                withinPortal={false}
+                            >
+                                <Menu.Target>
+                                    <Button variant="subtle" color="gray" size="compact-sm">
+                                        <Group gap={6} wrap="nowrap">
+                                            <IconCopy size={14} />
+                                            <span>{t("Saved")}</span>
+                                        </Group>
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={<IconSticker size={14} />}
+                                        onClick={openSavedSticker}
+                                    >
+                                        {t("View Saved Stickers")}
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
+                        </Group>
+
+                        <Group gap="xs" wrap="nowrap" visibleFrom="md">
+                            <Menu
+                                // trigger="hover"
+                                openDelay={80}
+                                closeDelay={100}
+                                withinPortal={false}
+                                width={180}
+                            >
+                                <Menu.Target>
+                                    <Button variant="subtle" color="gray" size="compact-sm">
+                                        <Group gap={6} wrap="nowrap">
+                                            <IconBox size={14} />
+                                            <span>{t("Preferences & Help")}</span>
+                                        </Group>
+                                    </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Group ml={12}>
+                                        <ColorToggleBtn />
+                                        <ChangeLanguage />
+                                    </Group>
+                                    <Divider my="xs" />
+                                    <Menu.Item
+                                        leftSection={<IconNotebook size={14} />}
+                                        onClick={openLearnMore}
+                                    >
+                                        General Informations
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
+                        </Group>
                     </Group>
                 </AppShell.Header>
-
-                <AppShell.Navbar p="md" style={{ borderRadius: "0px 26px 26px 0" }}>
-                    <AppShell.Section grow my="md" component={ScrollArea}>
-                        <Group justify="space-between">
-                            <Burger
-                                opened={opened}
-                                onClick={toggle}
-                                hiddenFrom="sm"
-                                size="sm"
-                                mb={14}
-                            />
-                        </Group>
-
-                        <Group justify="center" mb={12} mt={16}>
-                            <Badge tt="none" variant="light" radius="md">
-                                🔧 {t("Functions")}
-                            </Badge>
-                        </Group>
-
-                        <Box>
-                            <Text c="dimmed" fz={14} fw={400} mb={6}>
-                                {t("Export")}
-                            </Text>
-
-                            <Divider my="md" />
-
-                            <NavLink
-                                label={t("Download PNG")}
-                                leftSection={
-                                    <ThemeIcon variant="light">
-                                        <IconDownload size="1rem" />
-                                    </ThemeIcon>
-                                }
-                                // rightSection={
-                                //     <IconChevronRight size="0.8rem" stroke={1.5} className="mantine-rotate-rtl" />
-                                // }
-                                onClick={() => downloadCurrentPng()}
-                            />
-
-                            <NavLink
-                                label={t("Copy PNG to clipboard")}
-                                leftSection={
-                                    <ThemeIcon variant="light">
-                                        <IconCopyPlus size="1rem" />
-                                    </ThemeIcon>
-                                }
-                                // rightSection={
-                                //     <IconChevronRight size="0.8rem" stroke={1.5} className="mantine-rotate-rtl" />
-                                // }
-                                onClick={() => copyCurrentPng()}
-                            />
-
-                            <Text c="dimmed" fz={14} fw={400} mb={6} mt={12}>
-                                {t("Text")}
-                            </Text>
-
-                            <Divider my="md" />
-
-                            <NavLink
-                                label={t("Add Text")}
-                                leftSection={
-                                    <ThemeIcon variant="light">
-                                        <IconPlus size="1rem" />
-                                    </ThemeIcon>
-                                }
-                                // rightSection={
-                                //     <IconChevronRight size="0.8rem" stroke={1.5} className="mantine-rotate-rtl" />
-                                // }
-                                onClick={(e) => {
-                                    e.preventDefault();
-
-                                    const currentSticker = stickerContent.filter(
-                                        (v) => v.format === "image",
-                                    );
-                                    let [defaultText, textColor] = ["Hello", "red"];
-
-                                    if (currentSticker.length >= 1) {
-                                        const targetStickerInd = currentSticker.length - 1;
-
-                                        const stickerInfo = chatactorList.find(
-                                            (v) =>
-                                                v.img === currentSticker[targetStickerInd].content,
-                                        );
-                                        defaultText = stickerInfo
-                                            ? stickerInfo?.defaultText.text
-                                            : "Hello";
-                                        textColor = stickerInfo ? stickerInfo?.color : "red";
-                                    }
-
-                                    stickerContentHandlers.append(
-                                        createText(defaultText, textColor),
-                                    );
-                                    close();
-                                }}
-                            />
-
-                            <SelectEmoji
-                                title={t("Add Emoji (Text)")}
-                                addEmojiCb={(emoji: EmojiClickData) => {
-                                    stickerContentHandlers.append(createText(emoji.emoji));
-                                }}
-                            />
-
-                            <Text c="dimmed" fz={14} fw={400} mb={6} mt={12}>
-                                {t("Images")}
-                            </Text>
-
-                            <Divider my="md" />
-
-                            <SelectCharactor
-                                openComp="NavLink"
-                                title={t("Add New Sticker")}
-                                addStickerCb={async (v) => {
-                                    stickerContentHandlers.append(await createImages(v.img));
-                                    close();
-                                }}
-                            />
-
-                            {/* <SelectEmoji
-                                title="Add Emoji (Image)"
-                                addEmojiCb={(emoji: EmojiClickData) => {
-                                    callBackImageURL(emoji.imageUrl)
-                                }}
-                            /> */}
-
-                            <CreateLocalImages
-                                title={t("Upload local Image")}
-                                callBackImageURL={(imageURL: string) => {
-                                    callBackImageURL(imageURL);
-                                }}
-                            />
-
-                            <CreateExternalImages
-                                title={t("Upload URL Image")}
-                                callBackImageURL={(imageURL: string) => {
-                                    callBackImageURL(imageURL);
-                                }}
-                            />
-
-                            <Text c="dimmed" fz={14} fw={400} mb={6} mt={12}>
-                                {t("Utils")}
-                            </Text>
-
-                            <Divider my="md" />
-
-                            <SelectHistorySticker
-                                title={t("View Saved Stickers")}
-                                setStickerCb={(sticker) => {
-                                    stickerContentHandlers.setState(sticker);
-                                }}
-                            />
-                        </Box>
-                    </AppShell.Section>
-
-                    <AppShell.Section>
-                        <Group justify="space-between">
-                            <ColorToggleBtn />
-                            <LearnMore />
-                            <ChangeLanguage />
-                        </Group>
-                    </AppShell.Section>
-                </AppShell.Navbar>
 
                 <AppShell.Main>
                     <Container fluid>

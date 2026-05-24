@@ -22,7 +22,7 @@ function CanvasTransImage({
     onChange,
     draggable = true,
 }: CanvasTransImageProps) {
-    const [image] = useImage(url);
+    const [image] = useImage(url, "anonymous");
 
     const imageRef = useRef<Konva.Image>(null);
     const transformRef = useRef<Konva.Transformer>(null);

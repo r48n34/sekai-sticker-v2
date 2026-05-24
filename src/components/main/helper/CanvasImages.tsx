@@ -9,7 +9,7 @@ type CanvasImagesProps = {
 
 function CanvasImages(props: any, ref: any) {
     const { url, ...otherProps }: CanvasImagesProps = props;
-    const [image] = useImage(url);
+    const [image] = useImage(url, "anonymous");
 
     return <Image image={image} ref={ref} {...otherProps} />;
 }

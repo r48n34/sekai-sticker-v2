@@ -1,8 +1,9 @@
 import { IconLink, IconSend } from "@tabler/icons-react";
-import { NavLink, TextInput, Button, Modal, Group, ThemeIcon } from "@mantine/core";
+import { Menu, NavLink, TextInput, Button, Modal, Group, ThemeIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { zodResolver } from "mantine-form-zod-resolver";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -11,16 +12,27 @@ const formSchema = z.object({
 
 type CreateExternalImagesProps = {
     title?: string;
-    openComp?: "NavLink" | "Button";
+    openComp?: "NavLink" | "Button" | "MenuItem" | "None";
     callBackImageURL: (imageURL: string) => void;
+    opened?: boolean;
+    onOpen?: () => void;
+    onClose?: () => void;
 };
 
 function CreateExternalImages({
-    title = "Add External Image",
+    title,
     openComp = "NavLink",
     callBackImageURL,
+    opened: controlledOpened,
+    onOpen,
+    onClose,
 }: CreateExternalImagesProps) {
-    const [opened, { open, close }] = useDisclosure(false);
+    const { t } = useTranslation();
+    const [internalOpened, { open: openInternal, close: closeInternal }] = useDisclosure(false);
+    const opened = controlledOpened ?? internalOpened;
+    const open = onOpen ?? openInternal;
+    const close = onClose ?? closeInternal;
+    const modalTitle = title ?? t("Add External Image");
 
     const form = useForm({
         mode: "uncontrolled",
@@ -37,11 +49,11 @@ function CreateExternalImages({
 
     return (
         <>
-            <Modal opened={opened} onClose={close} title={title}>
+            <Modal opened={opened} onClose={close} title={modalTitle}>
                 <form onSubmit={form.onSubmit((values) => submitForm(values))}>
                     <TextInput
                         withAsterisk
-                        label="URL"
+                        label={t("URL")}
                         key={form.key("url")}
                         {...form.getInputProps("url")}
                     />
@@ -53,7 +65,7 @@ function CreateExternalImages({
                             variant="light"
                             leftSection={<IconSend size={16} />}
                         >
-                            Upload
+                            {t("Upload")}
                         </Button>
                     </Group>
                 </form>
@@ -61,7 +73,7 @@ function CreateExternalImages({
 
             {openComp === "NavLink" && (
                 <NavLink
-                    label={title}
+                    label={modalTitle}
                     leftSection={
                         <ThemeIcon variant="light">
                             <IconLink size="1rem" />
@@ -75,6 +87,12 @@ function CreateExternalImages({
                         open();
                     }}
                 />
+            )}
+
+            {openComp === "MenuItem" && (
+                <Menu.Item leftSection={<IconLink size={14} />} onClick={() => open()}>
+                    {modalTitle}
+                </Menu.Item>
             )}
         </>
     );

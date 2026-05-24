@@ -1,6 +1,11 @@
 export async function getImagesWidthAndHeight(imgSrc: string): Promise<{ w: number; h: number }> {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        const isCrossOriginCandidate = /^https?:\/\//i.test(imgSrc) || imgSrc.startsWith("//");
+
+        if (isCrossOriginCandidate) {
+            img.crossOrigin = "anonymous";
+        }
 
         // the following handler will fire after a successful loading of the image
         img.onload = () => {
