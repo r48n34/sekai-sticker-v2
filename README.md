@@ -45,6 +45,11 @@ MIT
 
 ## 🪵 Logs
 
+### v1.2.0
+
+- New UI Layout changes
+- Upgrade packages
+
 ### v1.1.0
 
 - Added languages support (Chinese / English / Japanese)

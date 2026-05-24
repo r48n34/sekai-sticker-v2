@@ -30,7 +30,7 @@ function LearnMore({
             {!hideTrigger && (
                 <Group>
                     <Text c="dimmed" fz={12}>
-                        v1.1.0
+                        v1.2.0
                     </Text>
 
                     <Tooltip label="General Informations">

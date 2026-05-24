@@ -76,6 +76,7 @@ function AdjustableText({
                         ...shapeProps,
                         x: node!.x(),
                         y: node!.y(),
+                        rotation: node!.rotation(),
                         // fontSize: shapeProps.fontSize * scaleX,
                         fontSize: shapeProps.fontSize ? shapeProps.fontSize * scaleY : 18 * scaleY,
 

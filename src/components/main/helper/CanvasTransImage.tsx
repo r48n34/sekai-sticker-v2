@@ -62,6 +62,7 @@ function CanvasTransImage({
                         ...shapeProps,
                         x: node!.x(),
                         y: node!.y(),
+                        rotation: node!.rotation(),
                         width: Math.max(5, node!.width() * scaleX),
                         height: Math.max(node!.height() * scaleY),
                     });
