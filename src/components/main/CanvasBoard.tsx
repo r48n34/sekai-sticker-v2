@@ -8,40 +8,36 @@ import {
     Group,
     Menu,
     Text,
-    TextInput,
-    ColorInput,
     ActionIcon,
     Tooltip,
-    Space,
-    Slider,
     Divider,
+    Drawer,
     Grid,
-    Select,
 } from "@mantine/core";
-import { Stage, Layer } from "react-konva";
+import { Stage, Layer, Line } from "react-konva";
 import Konva from "konva";
-import { useDisclosure, useListState, useHotkeys } from "@mantine/hooks";
+import { useDisclosure, useHotkeys } from "@mantine/hooks";
 
 import AdjustableText from "./helper/AdjustableText";
 import CanvasTransImage from "./helper/CanvasTransImage";
 import {
     IconArrowDown,
+    IconArrowBackUp,
+    IconArrowForwardUp,
     IconArrowUp,
-    IconArrowsHorizontal,
-    IconArrowsVertical,
+    IconAdjustments,
     IconBox,
     IconCopy,
     IconCopyPlus,
-    IconDimensions,
     IconDownload,
+    IconDotsVertical,
     IconFileSmile,
-    IconLetterCaseUpper,
     IconLink,
     IconNotebook,
+    IconFolder,
     IconPlus,
-    IconRulerMeasure,
     IconSticker,
-    IconTextCaption,
+    IconTemplate,
     IconTrash,
 } from "@tabler/icons-react";
 import {
@@ -50,6 +46,7 @@ import {
     createImages,
     createText,
     duplicateNewObject,
+    normalizeStickerList,
     StickerObject,
 } from "../../utils/createSticker";
 import SelectCharactor from "./SelectCharactor";
@@ -72,6 +69,16 @@ import SaveToHistory from "./helper/SaveToHistory";
 
 import { useTranslation } from "react-i18next";
 import ChangeLanguage from "../common/ChangeLanguage";
+import ElementInspector from "./ElementInspector";
+import ResponsiveStage from "./ResponsiveStage";
+import { useEditorHistory } from "../../hooks/useEditorHistory";
+import { restoreAssetUrls, saveAsset } from "../../utils/assetStorage";
+import ProjectManager from "./ProjectManager";
+import ExportStudio from "./ExportStudio";
+import { ExportOptions } from "../../utils/projectUtils";
+import { renderStickerExport } from "../../utils/exportUtils";
+import TemplateGallery from "./TemplateGallery";
+import EditorOnboarding from "./EditorOnboarding";
 
 const CreateExternalImages = lazy(() => import("./helper/CreateExternalImages"));
 const LearnMore = lazy(() => import("../about/LearnMore"));
@@ -84,12 +91,18 @@ function CanvasBoard() {
     const stageRef = useRef<Konva.Stage>(null);
 
     // History Sticker content
-    const stickerStore = useCurrentStickerStore((state) => state);
+    const storedSticker = useCurrentStickerStore((state) => state.sticker);
+    const modifyStoredSticker = useCurrentStickerStore((state) => state.modifySticker);
 
     // Current Sticker content
-    const [stickerContent, stickerContentHandlers] = useListState<StickerObject>(
-        stickerStore.sticker.filter((v) => !v.content.startsWith("blob:")),
-    );
+    const {
+        state: stickerContent,
+        handlers: stickerContentHandlers,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+    } = useEditorHistory<StickerObject>(normalizeStickerList(storedSticker));
 
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const selectedShape = stickerContent.find((v) => v.id === selectedId);
@@ -101,6 +114,17 @@ function CanvasBoard() {
     const [savedStickerOpened, { open: openSavedSticker, close: closeSavedSticker }] =
         useDisclosure(false);
     const [learnMoreOpened, { open: openLearnMore, close: closeLearnMore }] = useDisclosure(false);
+    const [inspectorOpened, { open: openInspector, close: closeInspector }] = useDisclosure(false);
+    const [projectsOpened, { open: openProjects, close: closeProjects }] = useDisclosure(false);
+    const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false);
+    const [templatesOpened, { open: openTemplates, close: closeTemplates }] = useDisclosure(false);
+    const [exportPreview, setExportPreview] = useState("");
+    const [exportOptions, setExportOptions] = useState<ExportOptions>({
+        bounds: "content",
+        background: null,
+        pixelRatio: 2,
+        filename: "sekai-sticker",
+    });
 
     // Check deselect click
     function checkDeselect(
@@ -117,10 +141,59 @@ function CanvasBoard() {
         stickerContentHandlers.setItem(ind, newAttrs);
     }
 
-    async function callBackImageURL(imageURL: string) {
+    function changeSelectedProp<K extends keyof StickerObject>(
+        property: K,
+        value: StickerObject[K],
+        coalesceKey?: string,
+    ) {
+        const index = stickerContent.findIndex((item) => item.id === selectedId);
+        stickerContentHandlers.setItemProp(index, property, value, coalesceKey);
+    }
+
+    function changeSelectedProps(patch: Partial<StickerObject>) {
+        const index = stickerContent.findIndex((item) => item.id === selectedId);
+        if (index < 0) return;
+        stickerContentHandlers.setItem(index, { ...stickerContent[index], ...patch });
+    }
+
+    function centerSelected(axis: "x" | "y") {
+        if (!selectedShape) return;
+        const estimatedWidth =
+            selectedShape.width ??
+            Math.max(5, (selectedShape.fontSize ?? 42) * selectedShape.content.length * 0.55);
+        const estimatedHeight = selectedShape.height ?? (selectedShape.fontSize ?? 42) * 1.2;
+        changeSelectedProps(
+            axis === "x"
+                ? { x: (CONFIGS.stageWidth - estimatedWidth) / 2 }
+                : { y: (CONFIGS.stageHeight - estimatedHeight) / 2 },
+        );
+    }
+
+    function resetSelectedTransform() {
+        if (!selectedShape) return;
+        changeSelectedProps({
+            x: selectedShape.format === "text" ? CONFIGS.initialTextX : CONFIGS.initialStickerX,
+            y: selectedShape.format === "text" ? CONFIGS.initialTextY : CONFIGS.initialStickerY,
+            rotation: selectedShape.format === "text" ? 20 : 0,
+            opacity: 1,
+            flipX: false,
+            flipY: false,
+        });
+    }
+
+    async function callBackImageURL(imageURL: string, name?: string) {
         try {
             console.log("Start to load image", imageURL);
-            stickerContentHandlers.append(await createExternalImages(imageURL));
+            const layer = await createExternalImages(imageURL);
+            layer.name = name;
+            if (imageURL.startsWith("blob:") && "indexedDB" in window) {
+                try {
+                    layer.assetId = await saveAsset(await (await fetch(imageURL)).blob());
+                } catch {
+                    // The layer remains usable for this session if durable storage is unavailable.
+                }
+            }
+            stickerContentHandlers.append(layer);
 
             notifications.show({
                 title: t("Success"),
@@ -148,6 +221,7 @@ function CanvasBoard() {
         }
         const newSticker = duplicateNewObject(selectedShape);
         stickerContentHandlers.append(newSticker);
+        setSelectedId(newSticker.id);
     }
 
     function addDefaultTextLayer() {
@@ -170,16 +244,9 @@ function CanvasBoard() {
     async function downloadCurrentPng() {
         setSelectedId(null);
         await timer(400);
-
-        const uri = stageRef.current!.toDataURL({
-            width:
-                Math.max(...stickerContent.map((v) => v.x + (v.width || 0))) || CONFIGS.stageWidth,
-            height:
-                Math.max(...stickerContent.map((v) => v.y + (v.height || 0))) ||
-                CONFIGS.stageHeight,
-            pixelRatio: 1.1,
-        });
-        downloadFile(uri, `${new Date().getTime()}_stage.png`);
+        const uri = renderStickerExport(stageRef.current!, stickerContent, exportOptions);
+        const filename = exportOptions.filename.trim() || "sekai-sticker";
+        downloadFile(uri, filename.endsWith(".png") ? filename : `${filename}.png`);
     }
 
     // Download current selected sticker to PNG
@@ -189,33 +256,35 @@ function CanvasBoard() {
             await timer(400);
 
             const blobImage = await dataURLToBlob(
-                stageRef.current!.toDataURL({
-                    width:
-                        Math.max(...stickerContent.map((v) => v.x + (v.width || 0))) ||
-                        CONFIGS.stageWidth,
-                    height:
-                        Math.max(...stickerContent.map((v) => v.y + (v.height || 0))) ||
-                        CONFIGS.stageHeight,
-                    pixelRatio: 1.1,
-                }),
+                renderStickerExport(stageRef.current!, stickerContent, exportOptions),
             );
 
             copyImages(blobImage, "image/png");
 
             notifications.show({
                 title: t("Success"),
-                message: "Image copied to your clipboard.",
+                message: t("Image copied to your clipboard"),
             });
         } catch (error) {
             console.error(error);
             notifications.show({
-                title: "Error",
+                title: t("Error"),
                 message: (error as Error).message,
             });
         }
     }
 
+    async function openExportStudio() {
+        setSelectedId(null);
+        await timer(100);
+        setExportPreview(stageRef.current?.toDataURL({ pixelRatio: 1 }) ?? "");
+        openExport();
+    }
+
     useHotkeys([
+        ["mod+z", undo],
+        ["mod+shift+z", redo],
+        ["mod+y", redo],
         [
             "delete",
             () => {
@@ -225,7 +294,7 @@ function CanvasBoard() {
             },
         ],
         [
-            "ctrl+d",
+            "mod+d",
             () => {
                 if (selectedId !== null) {
                     duplicateItems();
@@ -241,20 +310,47 @@ function CanvasBoard() {
     ]);
 
     useEffect(() => {
-        stickerStore.modifySticker(stickerContent);
-    }, [stickerContent]);
+        modifyStoredSticker(stickerContent);
+    }, [modifyStoredSticker, stickerContent]);
 
     useEffect(() => {
         if (stickerContent.length >= 1) {
             setSelectedId(stickerContent[0].id);
         }
+        void restoreAssetUrls(stickerContent).then((restored) => {
+            if (restored.some((item, index) => item.content !== stickerContent[index]?.content)) {
+                stickerContentHandlers.replaceState(restored);
+            }
+        });
     }, []);
+
+    useEffect(() => {
+        if (selectedId && !stickerContent.some((item) => item.id === selectedId)) {
+            setSelectedId(null);
+        }
+    }, [selectedId, stickerContent]);
+
+    async function changeSelectedCharacter(character: (typeof chatactorList)[number]) {
+        const index = stickerContent.findIndex((item) => item.id === selectedId);
+        if (index < 0) return;
+
+        const { w, h } = await getImagesWidthAndHeight(character.img);
+        const next = stickerContent.map((item, itemIndex) => {
+            if (itemIndex === index) {
+                return { ...item, content: character.img, width: w, height: h };
+            }
+
+            return item.format === "text" ? { ...item, fill: character.color } : item;
+        });
+        stickerContentHandlers.setState(next);
+    }
 
     return (
         <>
+            <EditorOnboarding />
             <DropZoneFullScreen
-                callBackImageURL={(imageURL: string) => {
-                    callBackImageURL(imageURL);
+                callBackImageURL={(imageURL: string, name?: string) => {
+                    callBackImageURL(imageURL, name);
                 }}
             />
             {emojiOpened && (
@@ -310,6 +406,50 @@ function CanvasBoard() {
                     <LearnMore opened onClose={closeLearnMore} hideTrigger />
                 </Suspense>
             )}
+            <Drawer
+                opened={inspectorOpened}
+                onClose={closeInspector}
+                title={t("Modify Elements")}
+                position="bottom"
+                size="72%"
+                radius="md"
+                closeButtonProps={{ "aria-label": t("Close inspector") }}
+            >
+                <ElementInspector
+                    selectedShape={selectedShape}
+                    onChangeProp={changeSelectedProp}
+                    onChangeCharacter={changeSelectedCharacter}
+                    onChangeMany={changeSelectedProps}
+                    onCenter={centerSelected}
+                    onResetTransform={resetSelectedTransform}
+                />
+            </Drawer>
+            <ProjectManager
+                opened={projectsOpened}
+                onClose={closeProjects}
+                layers={stickerContent}
+                onLoad={(layers) => {
+                    stickerContentHandlers.setState(layers);
+                    setSelectedId(layers[0]?.id ?? null);
+                }}
+            />
+            <ExportStudio
+                opened={exportOpened}
+                onClose={closeExport}
+                previewUrl={exportPreview}
+                options={exportOptions}
+                onChange={setExportOptions}
+                onDownload={downloadCurrentPng}
+                onCopy={copyCurrentPng}
+            />
+            <TemplateGallery
+                opened={templatesOpened}
+                onClose={closeTemplates}
+                onApply={(layers) => {
+                    stickerContentHandlers.setState(layers);
+                    setSelectedId(layers[0]?.id ?? null);
+                }}
+            />
 
             <AppShell padding="md">
                 <AppShell.Header>
@@ -326,7 +466,7 @@ function CanvasBoard() {
                         }}
                     >
                         <Group gap="xs" wrap="nowrap">
-                            <Text fw={700} px={8} mt={4}>
+                            <Text fw={700} px={8} mt={4} visibleFrom="sm">
                                 <IconSticker size={16} />
                             </Text>
                             <Menu
@@ -344,6 +484,12 @@ function CanvasBoard() {
                                     </Button>
                                 </Menu.Target>
                                 <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={<IconAdjustments size={14} />}
+                                        onClick={openExportStudio}
+                                    >
+                                        {t("Export studio")}
+                                    </Menu.Item>
                                     <Menu.Item
                                         leftSection={<IconDownload size={14} />}
                                         onClick={() => downloadCurrentPng()}
@@ -375,6 +521,12 @@ function CanvasBoard() {
                                 </Menu.Target>
                                 <Menu.Dropdown>
                                     <Menu.Item
+                                        leftSection={<IconTemplate size={14} />}
+                                        onClick={openTemplates}
+                                    >
+                                        {t("Starter templates")}
+                                    </Menu.Item>
+                                    <Menu.Item
                                         leftSection={<IconPlus size={14} />}
                                         onClick={() => addDefaultTextLayer()}
                                     >
@@ -396,8 +548,8 @@ function CanvasBoard() {
                                     <CreateLocalImages
                                         openComp="MenuItem"
                                         title={t("Upload local Image")}
-                                        callBackImageURL={(imageURL: string) => {
-                                            callBackImageURL(imageURL);
+                                        callBackImageURL={(imageURL: string, name?: string) => {
+                                            callBackImageURL(imageURL, name);
                                         }}
                                     />
                                     <Menu.Item
@@ -424,6 +576,12 @@ function CanvasBoard() {
                                     </Button>
                                 </Menu.Target>
                                 <Menu.Dropdown>
+                                    <Menu.Item
+                                        leftSection={<IconFolder size={14} />}
+                                        onClick={openProjects}
+                                    >
+                                        {t("Manage projects")}
+                                    </Menu.Item>
                                     <Menu.Item
                                         leftSection={<IconSticker size={14} />}
                                         onClick={openSavedSticker}
@@ -460,35 +618,85 @@ function CanvasBoard() {
                                         leftSection={<IconNotebook size={14} />}
                                         onClick={openLearnMore}
                                     >
-                                        General Informations
+                                        {t("General information")}
                                     </Menu.Item>
                                 </Menu.Dropdown>
                             </Menu>
                         </Group>
+
+                        <Menu width={200} position="bottom-end">
+                            <Menu.Target>
+                                <ActionIcon
+                                    hiddenFrom="md"
+                                    variant="subtle"
+                                    color="gray"
+                                    size={40}
+                                    aria-label={t("Preferences & Help")}
+                                >
+                                    <IconDotsVertical size={20} />
+                                </ActionIcon>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Label>{t("Preferences & Help")}</Menu.Label>
+                                <Group px="sm" py="xs">
+                                    <ColorToggleBtn />
+                                    <ChangeLanguage />
+                                </Group>
+                                <Divider my="xs" />
+                                <Menu.Item
+                                    leftSection={<IconNotebook size={14} />}
+                                    onClick={openLearnMore}
+                                >
+                                    {t("General information")}
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
                     </Group>
                 </AppShell.Header>
 
-                <AppShell.Main>
+                <AppShell.Main pb={{ base: 92, md: 16 }}>
                     <Container fluid>
-                        <Text fw={600} fz={32} ta="center" mt={60}>
+                        {/* <Text fw={600} fz={26} ta="center" mt={40}>
                             <IconSticker /> {t("Sekai Sticker V2")}
-                        </Text>
+                        </Text> */}
 
-                        <Text c="dimmed" mb={16} ta="center">
-                            {t("Generate your sticker in a better way!")}
-                        </Text>
-
-                        <Grid mt={18}>
+                        <Grid mt={40}>
                             <Grid.Col span={{ base: 12, md: 6, lg: 8 }}>
                                 <Box>
                                     <Card shadow="sm" padding="lg" radius="md" withBorder>
-                                        <Group justify="space-between" mb={16}>
-                                            <SaveToHistory />
+                                        <Group justify="space-between" mb={16} wrap="nowrap">
+                                            <Group gap="xs" wrap="nowrap">
+                                                <SaveToHistory />
+                                                <Tooltip label={t("Undo")}>
+                                                    <ActionIcon
+                                                        variant="light"
+                                                        size={36}
+                                                        aria-label={t("Undo")}
+                                                        disabled={!canUndo}
+                                                        onClick={undo}
+                                                    >
+                                                        <IconArrowBackUp size={20} />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                                <Tooltip label={t("Redo")}>
+                                                    <ActionIcon
+                                                        variant="light"
+                                                        size={36}
+                                                        aria-label={t("Redo")}
+                                                        disabled={!canRedo}
+                                                        onClick={redo}
+                                                    >
+                                                        <IconArrowForwardUp size={20} />
+                                                    </ActionIcon>
+                                                </Tooltip>
+                                            </Group>
 
                                             <Group>
                                                 <Tooltip label={t("Download PNG")}>
                                                     <ActionIcon
                                                         variant="light"
+                                                        size={36}
+                                                        aria-label={t("Download PNG")}
                                                         onClick={() => downloadCurrentPng()}
                                                     >
                                                         <IconDownload
@@ -501,6 +709,8 @@ function CanvasBoard() {
                                                 <Tooltip label={t("Copy PNG to clipboard")}>
                                                     <ActionIcon
                                                         variant="light"
+                                                        size={36}
+                                                        aria-label={t("Copy PNG to clipboard")}
                                                         onClick={() => copyCurrentPng()}
                                                     >
                                                         <IconCopyPlus
@@ -514,84 +724,153 @@ function CanvasBoard() {
 
                                         <Divider mb={24} />
 
-                                        <Group justify="center">
-                                            <Box style={{ minWidth: CONFIGS.stageWidth }}>
-                                                <Stage
-                                                    ref={stageRef}
-                                                    width={CONFIGS.stageWidth}
-                                                    height={CONFIGS.stageHeight}
-                                                    onMouseDown={checkDeselect}
-                                                    onTouchStart={checkDeselect}
-                                                    style={{
-                                                        border: "3px solid rgb(34,138,229, .26)",
-                                                        borderRadius: "8px",
-                                                    }}
-                                                >
-                                                    <Layer>
-                                                        {stickerContent.map((sticker, i) => {
-                                                            if (
-                                                                sticker.format === "image" ||
-                                                                sticker.format === "externalImage"
-                                                            ) {
-                                                                return (
-                                                                    <CanvasTransImage
-                                                                        key={sticker.id}
-                                                                        shapeProps={sticker}
-                                                                        isSelected={
-                                                                            sticker.id ===
-                                                                            selectedId
-                                                                        }
-                                                                        onSelect={() => {
-                                                                            setSelectedId(
-                                                                                sticker.id,
-                                                                            );
-                                                                        }}
-                                                                        onChange={(
-                                                                            newAttrs: StickerObject,
-                                                                        ) =>
-                                                                            onChangeHelper(
-                                                                                newAttrs,
-                                                                                i,
-                                                                            )
-                                                                        }
-                                                                        url={sticker.content}
-                                                                    />
-                                                                );
-                                                            }
+                                        <ResponsiveStage
+                                            width={CONFIGS.stageWidth}
+                                            height={CONFIGS.stageHeight}
+                                        >
+                                            <Stage
+                                                ref={stageRef}
+                                                width={CONFIGS.stageWidth}
+                                                height={CONFIGS.stageHeight}
+                                                onMouseDown={checkDeselect}
+                                                onTouchStart={checkDeselect}
+                                                style={{
+                                                    border: "3px solid rgb(34,138,229, .26)",
+                                                    borderRadius: "8px",
+                                                    boxSizing: "border-box",
+                                                }}
+                                            >
+                                                <Layer>
+                                                    {selectedShape && !selectedShape.locked && (
+                                                        <>
+                                                            <Line
+                                                                points={[
+                                                                    CONFIGS.stageWidth / 2,
+                                                                    0,
+                                                                    CONFIGS.stageWidth / 2,
+                                                                    CONFIGS.stageHeight,
+                                                                ]}
+                                                                stroke="#228be6"
+                                                                opacity={0.35}
+                                                                dash={[5, 5]}
+                                                                listening={false}
+                                                            />
+                                                            <Line
+                                                                points={[
+                                                                    0,
+                                                                    CONFIGS.stageHeight / 2,
+                                                                    CONFIGS.stageWidth,
+                                                                    CONFIGS.stageHeight / 2,
+                                                                ]}
+                                                                stroke="#228be6"
+                                                                opacity={0.35}
+                                                                dash={[5, 5]}
+                                                                listening={false}
+                                                            />
+                                                        </>
+                                                    )}
+                                                    {stickerContent.map((sticker, i) => {
+                                                        if (sticker.visible === false) return null;
 
+                                                        if (
+                                                            sticker.format === "image" ||
+                                                            sticker.format === "externalImage"
+                                                        ) {
                                                             return (
-                                                                <AdjustableText
+                                                                <CanvasTransImage
                                                                     key={sticker.id}
                                                                     shapeProps={sticker}
                                                                     isSelected={
-                                                                        sticker.id === selectedId
+                                                                        sticker.id === selectedId &&
+                                                                        !sticker.locked
                                                                     }
                                                                     onSelect={() => {
-                                                                        setSelectedId(sticker.id);
+                                                                        if (!sticker.locked) {
+                                                                            setSelectedId(
+                                                                                sticker.id,
+                                                                            );
+                                                                        }
                                                                     }}
+                                                                    draggable={!sticker.locked}
                                                                     onChange={(
                                                                         newAttrs: StickerObject,
                                                                     ) =>
                                                                         onChangeHelper(newAttrs, i)
                                                                     }
-                                                                    content={sticker.content}
+                                                                    url={sticker.content}
                                                                 />
                                                             );
-                                                        })}
-                                                    </Layer>
-                                                </Stage>
-                                            </Box>
-                                        </Group>
+                                                        }
+
+                                                        return (
+                                                            <AdjustableText
+                                                                key={sticker.id}
+                                                                shapeProps={sticker}
+                                                                isSelected={
+                                                                    sticker.id === selectedId &&
+                                                                    !sticker.locked
+                                                                }
+                                                                onSelect={() => {
+                                                                    if (!sticker.locked) {
+                                                                        setSelectedId(sticker.id);
+                                                                    }
+                                                                }}
+                                                                draggable={!sticker.locked}
+                                                                onChange={(
+                                                                    newAttrs: StickerObject,
+                                                                ) => onChangeHelper(newAttrs, i)}
+                                                                content={sticker.content}
+                                                            />
+                                                        );
+                                                    })}
+                                                </Layer>
+                                            </Stage>
+                                        </ResponsiveStage>
 
                                         <Box mt={16}>
                                             <SelectLayer
                                                 data={stickerContent}
-                                                selectCb={(id) => setSelectedId(id)}
+                                                selectedId={selectedId}
+                                                selectCb={(id) => {
+                                                    const layer = stickerContent.find(
+                                                        (item) => item.id === id,
+                                                    );
+                                                    if (!layer?.locked) setSelectedId(id);
+                                                }}
+                                                reorderCb={(from, to) =>
+                                                    stickerContentHandlers.reorder({ from, to })
+                                                }
+                                                visibilityCb={(index, visible) => {
+                                                    stickerContentHandlers.setItemProp(
+                                                        index,
+                                                        "visible",
+                                                        visible,
+                                                    );
+                                                    if (
+                                                        !visible &&
+                                                        stickerContent[index]?.id === selectedId
+                                                    ) {
+                                                        setSelectedId(null);
+                                                    }
+                                                }}
+                                                lockCb={(index, locked) => {
+                                                    stickerContentHandlers.setItemProp(
+                                                        index,
+                                                        "locked",
+                                                        locked,
+                                                    );
+                                                    if (
+                                                        locked &&
+                                                        stickerContent[index]?.id === selectedId
+                                                    ) {
+                                                        setSelectedId(null);
+                                                    }
+                                                }}
                                             />
                                         </Box>
                                     </Card>
 
-                                    <Box mb={12} mt={16}>
+                                    <Box mb={12} mt={16} visibleFrom="md">
                                         <Card
                                             shadow="sm"
                                             padding="lg"
@@ -724,315 +1003,81 @@ function CanvasBoard() {
                                 </Box>
                             </Grid.Col>
 
-                            <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-                                <Box>
-                                    <Group justify="center">
-                                        <Box style={{ width: "105%" }}>
-                                            <Card shadow="sm" padding="lg" radius="md" withBorder>
-                                                <Text ta="center" fz={12} c="dimmed">
-                                                    <IconBox size={12} /> {t("Modify Elements")}
-                                                </Text>
-
-                                                {selectedShape === undefined && (
-                                                    <Text c="dimmed" ta="center" mt={12}>
-                                                        {t("Select item to modify")}
-                                                    </Text>
-                                                )}
-
-                                                {selectedShape !== undefined && (
-                                                    <>
-                                                        <Text fw={500} fz={14} mt={20}>
-                                                            <IconArrowsHorizontal size={12} />{" "}
-                                                            {t("Position")} X
-                                                        </Text>
-                                                        <Slider
-                                                            mt={2}
-                                                            color="blue"
-                                                            value={selectedShape.x}
-                                                            step={1}
-                                                            max={350}
-                                                            min={-350}
-                                                            onChange={(value) => {
-                                                                const ind =
-                                                                    stickerContent.findIndex(
-                                                                        (v) => v.id === selectedId,
-                                                                    );
-                                                                stickerContentHandlers.setItemProp(
-                                                                    ind,
-                                                                    "x",
-                                                                    value,
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        <Text fw={500} fz={14} mt={20}>
-                                                            <IconArrowsVertical size={12} />{" "}
-                                                            {t("Position")} Y
-                                                        </Text>
-                                                        <Slider
-                                                            mt={2}
-                                                            color="blue"
-                                                            value={selectedShape.y}
-                                                            step={1}
-                                                            max={350}
-                                                            min={-350}
-                                                            onChange={(value) => {
-                                                                const ind =
-                                                                    stickerContent.findIndex(
-                                                                        (v) => v.id === selectedId,
-                                                                    );
-                                                                stickerContentHandlers.setItemProp(
-                                                                    ind,
-                                                                    "y",
-                                                                    value,
-                                                                );
-                                                            }}
-                                                        />
-
-                                                        {selectedShape.format === "text" && (
-                                                            <>
-                                                                <Text fw={500} fz={14} mt={20}>
-                                                                    <IconDimensions size={14} />{" "}
-                                                                    {t("Font Size")}
-                                                                </Text>
-                                                                <Slider
-                                                                    step={1}
-                                                                    max={200}
-                                                                    min={0}
-                                                                    value={selectedShape.fontSize}
-                                                                    onChange={(value) => {
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "fontSize",
-                                                                            +value,
-                                                                        );
-                                                                    }}
-                                                                />
-
-                                                                <TextInput
-                                                                    mt={12}
-                                                                    leftSection={
-                                                                        <IconTextCaption
-                                                                            size={18}
-                                                                        />
-                                                                    }
-                                                                    label={t("Text Content")}
-                                                                    placeholder="Input placeholder"
-                                                                    value={selectedShape.content}
-                                                                    onChange={(event) => {
-                                                                        const newText =
-                                                                            event.currentTarget
-                                                                                .value;
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "content",
-                                                                            newText,
-                                                                        );
-                                                                    }}
-                                                                />
-
-                                                                <Text fw={500} fz={14} mt={20}>
-                                                                    <IconRulerMeasure size={14} />{" "}
-                                                                    {t("Letter Spacing")}
-                                                                </Text>
-                                                                <Slider
-                                                                    mt={2}
-                                                                    color="blue"
-                                                                    value={
-                                                                        selectedShape.letterSpacing
-                                                                    }
-                                                                    step={0.1}
-                                                                    max={20}
-                                                                    min={-20}
-                                                                    onChange={(value) => {
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "letterSpacing",
-                                                                            value,
-                                                                        );
-                                                                    }}
-                                                                />
-
-                                                                <Text fw={500} fz={14} mt={20}>
-                                                                    <IconLetterCaseUpper
-                                                                        size={14}
-                                                                    />{" "}
-                                                                    {t("Stroke Width")}
-                                                                </Text>
-                                                                <Slider
-                                                                    mt={2}
-                                                                    color="blue"
-                                                                    value={
-                                                                        selectedShape.strokeWidth
-                                                                    }
-                                                                    step={0.1}
-                                                                    max={80}
-                                                                    min={0}
-                                                                    onChange={(value) => {
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "strokeWidth",
-                                                                            value,
-                                                                        );
-                                                                    }}
-                                                                />
-
-                                                                <ColorInput
-                                                                    mt={12}
-                                                                    label={t("Color")}
-                                                                    placeholder="Input placeholder"
-                                                                    value={selectedShape.fill}
-                                                                    onChange={(colorStr) => {
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "fill",
-                                                                            colorStr,
-                                                                        );
-                                                                    }}
-                                                                />
-
-                                                                <Select
-                                                                    mt={12}
-                                                                    allowDeselect={false}
-                                                                    clearable={false}
-                                                                    leftSection={
-                                                                        <IconTextCaption
-                                                                            size={18}
-                                                                        />
-                                                                    }
-                                                                    label={t("Font Family")}
-                                                                    data={[
-                                                                        {
-                                                                            value: "YurukaStd",
-                                                                            label: "YurukaStd",
-                                                                        },
-                                                                        {
-                                                                            value: "SSFangTangTi",
-                                                                            label: "SSFangTangTi",
-                                                                        },
-                                                                        {
-                                                                            value: "ChillRoundGothic_Bold",
-                                                                            label: "(Chinese Friendly) ChillRoundGothic_Bold",
-                                                                        },
-                                                                    ]}
-                                                                    value={selectedShape.fontFamily}
-                                                                    onChange={(str) => {
-                                                                        if (str === null) {
-                                                                            return;
-                                                                        }
-
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "fontFamily",
-                                                                            str as any,
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            </>
-                                                        )}
-
-                                                        {selectedShape.format === "image" && (
-                                                            <>
-                                                                <Space h="md" />
-                                                                <SelectCharactor
-                                                                    openComp="Button"
-                                                                    title={t("Change Charactor")}
-                                                                    addStickerCb={async (v) => {
-                                                                        const ind =
-                                                                            stickerContent.findIndex(
-                                                                                (v) =>
-                                                                                    v.id ===
-                                                                                    selectedId,
-                                                                            );
-
-                                                                        const { w, h } =
-                                                                            await getImagesWidthAndHeight(
-                                                                                v.img,
-                                                                            );
-
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "content",
-                                                                            v.img,
-                                                                        );
-
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "width",
-                                                                            w,
-                                                                        );
-                                                                        stickerContentHandlers.setItemProp(
-                                                                            ind,
-                                                                            "height",
-                                                                            h,
-                                                                        );
-
-                                                                        for (
-                                                                            let i = 0;
-                                                                            i <
-                                                                            stickerContent.length;
-                                                                            i++
-                                                                        ) {
-                                                                            if (
-                                                                                stickerContent[i]
-                                                                                    .format ===
-                                                                                "text"
-                                                                            ) {
-                                                                                stickerContentHandlers.setItemProp(
-                                                                                    i,
-                                                                                    "fill",
-                                                                                    v.color,
-                                                                                );
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </Card>
-                                        </Box>
-                                    </Group>
-                                </Box>
+                            <Grid.Col span={{ base: 12, md: 6, lg: 4 }} visibleFrom="md">
+                                <ElementInspector
+                                    selectedShape={selectedShape}
+                                    onChangeProp={changeSelectedProp}
+                                    onChangeCharacter={changeSelectedCharacter}
+                                    onChangeMany={changeSelectedProps}
+                                    onCenter={centerSelected}
+                                    onResetTransform={resetSelectedTransform}
+                                />
                             </Grid.Col>
                         </Grid>
+
+                        <Card
+                            hiddenFrom="md"
+                            withBorder
+                            shadow="md"
+                            padding="xs"
+                            radius="md"
+                            style={{
+                                position: "fixed",
+                                left: 12,
+                                right: 12,
+                                bottom: 12,
+                                zIndex: 200,
+                            }}
+                        >
+                            <Group justify="space-around" wrap="nowrap">
+                                <ActionIcon
+                                    variant="light"
+                                    size={44}
+                                    aria-label={t("Undo")}
+                                    disabled={!canUndo}
+                                    onClick={undo}
+                                >
+                                    <IconArrowBackUp size={22} />
+                                </ActionIcon>
+                                <ActionIcon
+                                    variant="light"
+                                    size={44}
+                                    aria-label={t("Redo")}
+                                    disabled={!canRedo}
+                                    onClick={redo}
+                                >
+                                    <IconArrowForwardUp size={22} />
+                                </ActionIcon>
+                                <ActionIcon
+                                    variant="filled"
+                                    size={44}
+                                    aria-label={t("Modify Elements")}
+                                    disabled={selectedShape === undefined}
+                                    onClick={openInspector}
+                                >
+                                    <IconAdjustments size={22} />
+                                </ActionIcon>
+                                <ActionIcon
+                                    variant="light"
+                                    size={44}
+                                    aria-label={t("Duplicate Selected Layer")}
+                                    disabled={selectedShape === undefined || selectedShape.locked}
+                                    onClick={duplicateItems}
+                                >
+                                    <IconCopy size={22} />
+                                </ActionIcon>
+                                <ActionIcon
+                                    variant="light"
+                                    color="red"
+                                    size={44}
+                                    aria-label={t("Delete Selected Layer")}
+                                    disabled={selectedShape === undefined || selectedShape.locked}
+                                    onClick={deleteSelectedLayer}
+                                >
+                                    <IconTrash size={22} />
+                                </ActionIcon>
+                            </Group>
+                        </Card>
                     </Container>
                 </AppShell.Main>
             </AppShell>

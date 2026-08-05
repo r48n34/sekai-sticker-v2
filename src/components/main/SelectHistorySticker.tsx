@@ -8,6 +8,8 @@ import RemoveOneToHistory from "./helper/RemoveOneToHistory";
 import ViewCanvasComp from "./utils/ViewCanvasComp";
 import RemoveAllHistory from "./helper/RemoveAllHistory";
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
+import { restoreAssetUrls } from "../../utils/assetStorage";
 
 interface SelectHistoryStickerProps {
     title?: string;
@@ -33,9 +35,15 @@ function SelectHistorySticker({
     const open = onOpen ?? openInternal;
     const close = onClose ?? closeInternal;
     const histStickerArray = useHistoryStickerStore((state) => state.histStickerArray);
+    const [hydratedHistory, setHydratedHistory] = useState(histStickerArray);
+
+    useEffect(() => {
+        if (!opened) return;
+        void Promise.all(histStickerArray.map(restoreAssetUrls)).then(setHydratedHistory);
+    }, [histStickerArray, opened]);
 
     function selectAndClose(ind: number) {
-        setStickerCb(histStickerArray[ind]);
+        setStickerCb(hydratedHistory[ind]);
         close();
 
         notifications.show({
@@ -61,7 +69,7 @@ function SelectHistorySticker({
                 position="bottom"
                 size="65%"
             >
-                {histStickerArray.length <= 0 && (
+                {hydratedHistory.length <= 0 && (
                     <Box>
                         <Text c="dimmed" ta="center" mt={160}>
                             {t("You have no saved sticker in history")}
@@ -70,7 +78,7 @@ function SelectHistorySticker({
                 )}
 
                 <Grid>
-                    {histStickerArray.map((stickerContent, ind) => (
+                    {hydratedHistory.map((stickerContent, ind) => (
                         <Grid.Col span={{ base: 12, md: 6, lg: 3 }} key={ind}>
                             <Box
                                 style={{

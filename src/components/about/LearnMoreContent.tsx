@@ -3,11 +3,13 @@ import { IconChevronRight } from "@tabler/icons-react";
 import { useState } from "react";
 import GeneralInformations from "./content/GeneralInformations";
 import Shortcuts from "./content/Shortcuts";
+import { useTranslation } from "react-i18next";
 
-const howToUseNav = ["General Informations", "Shortcuts"] as const;
+const howToUseNav = ["General information", "Shortcuts"] as const;
 type HowToUseNavType = (typeof howToUseNav)[number];
 
 function LearnMoreContent() {
+    const { t } = useTranslation();
     const [guideLink, setGuideLink] = useState<HowToUseNavType>("Shortcuts");
 
     return (
@@ -16,7 +18,8 @@ function LearnMoreContent() {
                 <Grid.Col span={{ base: 12, md: 4, lg: 3 }}>
                     {howToUseNav.map((v) => (
                         <NavLink
-                            label={v}
+                            key={v}
+                            label={t(v)}
                             onClick={() => setGuideLink(v)}
                             rightSection={
                                 <IconChevronRight
@@ -31,7 +34,7 @@ function LearnMoreContent() {
 
                 <Grid.Col span={{ base: 12, md: 8, lg: 9 }}>
                     {guideLink === "Shortcuts" && <Shortcuts />}
-                    {guideLink === "General Informations" && <GeneralInformations />}
+                    {guideLink === "General information" && <GeneralInformations />}
                 </Grid.Col>
             </Grid>
         </>

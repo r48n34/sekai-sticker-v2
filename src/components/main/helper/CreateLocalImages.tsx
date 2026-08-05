@@ -6,7 +6,7 @@ import { useRef } from "react";
 type CreateLocalImagesProps = {
     title?: string;
     openComp?: "NavLink" | "Button" | "MenuItem";
-    callBackImageURL: (imageURL: string) => void;
+    callBackImageURL: (imageURL: string, name?: string) => void;
 };
 
 function CreateLocalImages({
@@ -18,7 +18,7 @@ function CreateLocalImages({
 
     function submitForm(imageFile: File) {
         const fileUrl = URL.createObjectURL(imageFile);
-        callBackImageURL(fileUrl);
+        callBackImageURL(fileUrl, imageFile.name);
     }
 
     function handleFileChange(nextFiles: File[] | null) {

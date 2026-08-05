@@ -21,6 +21,7 @@ export default function ColorToggleBtn({ mode = "Switch" }: ColorToggleBtnProps)
             {mode === "Switch" && (
                 <Box>
                     <Switch
+                        aria-label="Toggle color scheme"
                         checked={colorScheme === "dark"}
                         onChange={() => toggleColorScheme()}
                         size="sm"

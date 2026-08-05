@@ -28,6 +28,8 @@ function AdjustableText({
     const fontFamily = shapeProps.fontFamily || "YurukaStd";
     const [loadedFontFamily, setLoadedFontFamily] = useState<string | null>(null);
     const isFontReady = loadedFontFamily === fontFamily;
+    const displayWidth = shapeProps.width ?? textRef.current?.width() ?? 0;
+    const displayHeight = shapeProps.height ?? textRef.current?.height() ?? 0;
 
     useEffect(() => {
         let isActive = true;
@@ -78,33 +80,39 @@ function AdjustableText({
                     // textDecoration={"line-through"}
 
                     {...shapeProps}
+                    x={shapeProps.x + (shapeProps.flipX ? displayWidth : 0)}
+                    y={shapeProps.y + (shapeProps.flipY ? displayHeight : 0)}
+                    scaleX={shapeProps.flipX ? -1 : 1}
+                    scaleY={shapeProps.flipY ? -1 : 1}
                     onDragEnd={(e) => {
                         onChange({
                             ...shapeProps,
-                            x: e.target.x(),
-                            y: e.target.y(),
+                            x: e.target.x() - (shapeProps.flipX ? e.target.width() : 0),
+                            y: e.target.y() - (shapeProps.flipY ? e.target.height() : 0),
                         });
                     }}
                     onTransformEnd={(_) => {
                         const node = textRef.current;
 
-                        const scaleX = node!.scaleX();
-                        const scaleY = node!.scaleY();
+                        const scaleX = Math.abs(node!.scaleX());
+                        const scaleY = Math.abs(node!.scaleY());
+                        const width = Math.max(5, node!.width() * scaleX);
+                        const height = Math.max(5, node!.height() * scaleY);
 
-                        node!.scaleX(1);
-                        node!.scaleY(1);
+                        node!.scaleX(shapeProps.flipX ? -1 : 1);
+                        node!.scaleY(shapeProps.flipY ? -1 : 1);
                         onChange({
                             ...shapeProps,
-                            x: node!.x(),
-                            y: node!.y(),
+                            x: node!.x() - (shapeProps.flipX ? width : 0),
+                            y: node!.y() - (shapeProps.flipY ? height : 0),
                             rotation: node!.rotation(),
                             // fontSize: shapeProps.fontSize * scaleX,
                             fontSize: shapeProps.fontSize
                                 ? shapeProps.fontSize * scaleY
                                 : 18 * scaleY,
 
-                            width: Math.max(5, node!.width() * scaleX),
-                            height: Math.max(node!.height() * scaleY),
+                            width,
+                            height,
                         });
                     }}
                 />

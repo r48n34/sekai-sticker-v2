@@ -8,6 +8,7 @@ import {
     createImagesInit,
     createText,
     duplicateNewObject,
+    normalizeStickerList,
     type StickerObject,
 } from "./createSticker";
 import * as imagesUtils from "./imagesUtils";
@@ -60,6 +61,25 @@ describe("createSticker utils", () => {
         expect(duplicated.x).toBe(15);
         expect(duplicated.y).toBe(35);
         expect(duplicated.id).not.toBe(base.id);
+    });
+
+    it("adds backward-compatible editor metadata to older stickers", () => {
+        const legacy: StickerObject = {
+            x: 0,
+            y: 0,
+            format: "text",
+            content: "Legacy",
+            id: "legacy-layer",
+        };
+
+        expect(normalizeStickerList([legacy])).toEqual([
+            {
+                ...legacy,
+                visible: true,
+                locked: false,
+                opacity: 1,
+            },
+        ]);
     });
 
     it("capitalizeFirstLetter uppercases only first character", () => {

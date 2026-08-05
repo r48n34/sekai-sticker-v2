@@ -2,6 +2,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { Modal, ActionIcon, Tooltip, Group, Text } from "@mantine/core";
 import { IconNotebook } from "@tabler/icons-react";
 import LearnMoreContent from "./LearnMoreContent";
+import { useTranslation } from "react-i18next";
 
 type LearnMoreProps = {
     opened?: boolean;
@@ -16,6 +17,7 @@ function LearnMore({
     onClose,
     hideTrigger = false,
 }: LearnMoreProps) {
+    const { t } = useTranslation();
     const [internalOpened, { open: openInternal, close: closeInternal }] = useDisclosure(false);
     const opened = controlledOpened ?? internalOpened;
     const open = onOpen ?? openInternal;
@@ -23,7 +25,7 @@ function LearnMore({
 
     return (
         <>
-            <Modal opened={opened} onClose={close} title="General Informations" size="85%">
+            <Modal opened={opened} onClose={close} title={t("General information")} size="85%">
                 <LearnMoreContent />
             </Modal>
 
@@ -33,10 +35,10 @@ function LearnMore({
                         v1.2.0
                     </Text>
 
-                    <Tooltip label="General Informations">
+                    <Tooltip label={t("General information")}>
                         <ActionIcon
                             variant="light"
-                            aria-label="General Informations"
+                            aria-label={t("General information")}
                             onClick={open}
                         >
                             <IconNotebook style={{ width: "70%", height: "70%" }} stroke={1.5} />

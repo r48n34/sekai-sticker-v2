@@ -1,6 +1,7 @@
 import { Text, Divider } from "@mantine/core";
 import { IconClipboard } from "@tabler/icons-react";
 import Markdown from "markdown-to-jsx";
+import { useTranslation } from "react-i18next";
 
 const contentOne = `
 *(English Only)*
@@ -21,10 +22,11 @@ https://github.com/TheOriginalAyaka/sekai-stickers
 `;
 
 function GeneralInformations() {
+    const { t } = useTranslation();
     return (
         <>
             <Text fz={32} fw={600} ta="left" mb={8}>
-                <IconClipboard /> General Informations
+                <IconClipboard /> {t("General information")}
             </Text>
 
             <Divider my="md" />

@@ -22,11 +22,11 @@ function SaveToHistory() {
     }
 
     return (
-        <Tooltip label={t("Save To History (External / Internal images will not be saved)")}>
+        <Tooltip label={t("Save current sticker to history")}>
             <ActionIcon
                 variant="light"
                 color="blue"
-                aria-label={t("Save To History (External / Internal images will not be saved)")}
+                aria-label={t("Save current sticker to history")}
                 onClick={() => addStickerToHist()}
             >
                 <IconDeviceFloppy style={{ width: "70%", height: "70%" }} stroke={1.5} />

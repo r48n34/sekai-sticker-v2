@@ -4,7 +4,7 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useTranslation } from "react-i18next";
 
 type DropZoneFullScreenProps = {
-    callBackImageURL: (imageURL: string) => void;
+    callBackImageURL: (imageURL: string, name?: string) => void;
 };
 
 function DropZoneFullScreen({ callBackImageURL }: DropZoneFullScreenProps) {
@@ -13,7 +13,7 @@ function DropZoneFullScreen({ callBackImageURL }: DropZoneFullScreenProps) {
     async function submitForm(imageFile: File) {
         const arrayBuffer = await imageFile!.arrayBuffer();
         const fileUrl = URL.createObjectURL(new Blob([arrayBuffer]));
-        callBackImageURL(fileUrl);
+        callBackImageURL(fileUrl, imageFile.name);
     }
 
     return (

@@ -22,6 +22,8 @@ export interface StickerObject {
     width?: number;
     height?: number;
     letterSpacing?: number;
+    align?: "left" | "center" | "right";
+    lineHeight?: number;
 
     // Is a text, image or the external image
     format: "text" | "image" | "externalImage";
@@ -33,7 +35,16 @@ export interface StickerObject {
     strokeWidth?: number;
 
     // Default font | Chinese word font
-    fontFamily?: "YurukaStd" | "ChillRoundGothic_Bold";
+    fontFamily?: "YurukaStd" | "SSFangTangTi" | "ChillRoundGothic_Bold";
+
+    // Editor metadata. Optional fields keep older saved stickers compatible.
+    name?: string;
+    visible?: boolean;
+    locked?: boolean;
+    opacity?: number;
+    flipX?: boolean;
+    flipY?: boolean;
+    assetId?: string;
 
     // UUID
     id: string;
@@ -54,11 +65,16 @@ export function createText(text: string = "Hello", color: string = "#50668f"): S
         fill: color,
         stroke: "#ffffff",
         letterSpacing: 0,
+        align: "center",
+        lineHeight: 1,
         strokeWidth: 12,
         format: "text",
         fontFamily: "YurukaStd",
         id: uuid(),
         content: text,
+        visible: true,
+        locked: false,
+        opacity: 1,
 
         createdDate: new Date(),
         updatedDate: new Date(),
@@ -87,6 +103,9 @@ export async function createExternalImages(
         format: "externalImage",
         content: src,
         id: uuid(),
+        visible: true,
+        locked: false,
+        opacity: 1,
 
         createdDate: new Date(),
         updatedDate: new Date(),
@@ -108,6 +127,9 @@ export async function createImages(
         format: "image",
         content: src,
         id: uuid(),
+        visible: true,
+        locked: false,
+        opacity: 1,
 
         createdDate: new Date(),
         updatedDate: new Date(),
@@ -129,6 +151,9 @@ export function createImagesInit(
         format: "image",
         content: src,
         id: uuid(),
+        visible: true,
+        locked: false,
+        opacity: 1,
 
         createdDate: new Date(),
         updatedDate: new Date(),
@@ -144,6 +169,19 @@ export function duplicateNewObject(sticker: StickerObject): StickerObject {
 
         updatedDate: new Date(),
     };
+}
+
+export function normalizeStickerObject(sticker: StickerObject): StickerObject {
+    return {
+        ...sticker,
+        visible: sticker.visible ?? true,
+        locked: sticker.locked ?? false,
+        opacity: sticker.opacity ?? 1,
+    };
+}
+
+export function normalizeStickerList(stickers: StickerObject[]): StickerObject[] {
+    return stickers.map(normalizeStickerObject);
 }
 
 export function capitalizeFirstLetter(val: string) {
