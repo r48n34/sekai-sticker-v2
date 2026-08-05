@@ -36,61 +36,88 @@ export default defineConfig(({ command, mode }) => {
                           hostname: "https://sekai-sticker.vercel.app/",
                           dynamicRoutes,
                       }),
-                      VitePWA({
-                          registerType: "autoUpdate",
-                          includeAssets: ["logo.ico"],
-                          manifest: {
-                              name: "Sekai Sticker V2",
-                              short_name: "Sekai Sticker",
-                              description: "Better Project Sekai sticker maker",
-                              theme_color: "#ffffff",
-                              icons: [
-                                  {
-                                      src: "logo.ico",
-                                      sizes: "192x192",
-                                      type: "image/x-icon",
-                                  },
-                              ],
-                          },
-                          workbox: {
-                              globPatterns: ["**/*.{js,css,html}"],
-                              cleanupOutdatedCaches: true,
-                              runtimeCaching: [
-                                  {
-                                      urlPattern: ({ sameOrigin, url }) =>
-                                          sameOrigin && url.pathname.startsWith("/img/"),
-                                      handler: "StaleWhileRevalidate",
-                                      options: {
-                                          cacheName: "sticker-images",
-                                          expiration: {
-                                              maxEntries: 400,
-                                              maxAgeSeconds: 60 * 60 * 24 * 30,
-                                          },
-                                          cacheableResponse: {
-                                              statuses: [0, 200],
-                                          },
-                                      },
-                                  },
-                                  {
-                                      urlPattern: ({ sameOrigin, url }) =>
-                                          sameOrigin && /^\/assets\/.*\.woff2?$/.test(url.pathname),
-                                      handler: "CacheFirst",
-                                      options: {
-                                          cacheName: "sticker-fonts",
-                                          expiration: {
-                                              maxEntries: 6,
-                                              maxAgeSeconds: 60 * 60 * 24 * 365,
-                                          },
-                                          cacheableResponse: {
-                                              statuses: [0, 200],
-                                          },
-                                      },
-                                  },
-                              ],
-                          },
-                      }),
                   ]
                 : []),
+            VitePWA({
+                disable: isTest,
+                registerType: "prompt",
+                includeAssets: [
+                    "logo.ico",
+                    "apple-touch-icon.png",
+                    "pwa-192x192.png",
+                    "pwa-512x512.png",
+                    "maskable-icon-512x512.png",
+                ],
+                manifest: {
+                    id: "/",
+                    name: "Sekai Sticker V2",
+                    short_name: "Sekai Sticker",
+                    description: "Better Project Sekai sticker maker",
+                    start_url: "/",
+                    scope: "/",
+                    display: "standalone",
+                    background_color: "#ffffff",
+                    theme_color: "#ffffff",
+                    categories: ["graphics", "utilities"],
+                    icons: [
+                        {
+                            src: "/pwa-192x192.png",
+                            sizes: "192x192",
+                            type: "image/png",
+                            purpose: "any",
+                        },
+                        {
+                            src: "/pwa-512x512.png",
+                            sizes: "512x512",
+                            type: "image/png",
+                            purpose: "any",
+                        },
+                        {
+                            src: "/maskable-icon-512x512.png",
+                            sizes: "512x512",
+                            type: "image/png",
+                            purpose: "maskable",
+                        },
+                    ],
+                },
+                workbox: {
+                    globPatterns: ["**/*.{js,css,html}"],
+                    cleanupOutdatedCaches: true,
+                    navigateFallback: "index.html",
+                    runtimeCaching: [
+                        {
+                            urlPattern: ({ sameOrigin, url }) =>
+                                sameOrigin && url.pathname.startsWith("/img/"),
+                            handler: "StaleWhileRevalidate",
+                            options: {
+                                cacheName: "sticker-images",
+                                expiration: {
+                                    maxEntries: 400,
+                                    maxAgeSeconds: 60 * 60 * 24 * 30,
+                                },
+                                cacheableResponse: {
+                                    statuses: [0, 200],
+                                },
+                            },
+                        },
+                        {
+                            urlPattern: ({ sameOrigin, url }) =>
+                                sameOrigin && /^\/assets\/.*\.woff2?$/.test(url.pathname),
+                            handler: "CacheFirst",
+                            options: {
+                                cacheName: "sticker-fonts",
+                                expiration: {
+                                    maxEntries: 6,
+                                    maxAgeSeconds: 60 * 60 * 24 * 365,
+                                },
+                                cacheableResponse: {
+                                    statuses: [0, 200],
+                                },
+                            },
+                        },
+                    ],
+                },
+            }),
         ],
         build: {
             target: "es2022",

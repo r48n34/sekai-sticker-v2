@@ -16,6 +16,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import LoadingPage from "./components/common/LoadingPage";
 import Layout from "./components/common/Layout";
+import PwaUpdatePrompt from "./components/common/PwaUpdatePrompt";
 
 const MainPage = lazy(() => import("./pages/MainPage"));
 
@@ -38,6 +39,7 @@ function App() {
             <Suspense fallback={<LoadingPage />}>
                 <ModalsProvider>
                     <Notifications />
+                    <PwaUpdatePrompt />
                     <RouterProvider router={router} />
                 </ModalsProvider>
             </Suspense>
