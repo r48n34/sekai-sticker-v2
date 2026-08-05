@@ -1,7 +1,7 @@
 import { useDisclosure } from "@mantine/hooks";
 import { Drawer, Menu, NavLink } from "@mantine/core";
 import { IconFileSmile } from "@tabler/icons-react";
-import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import EmojiPicker, { type EmojiClickData } from "emoji-picker-react";
 
 interface SelectEmojiProps {
     title?: string;

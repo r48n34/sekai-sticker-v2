@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
     AppShell,
     Button,
@@ -60,22 +60,23 @@ import { KonvaEventObject } from "konva/lib/Node";
 import { chatactorList } from "../../data/characters";
 import ColorToggleBtn from "../common/ColorToggleBtn";
 import { copyImages } from "../../utils/copyUtils";
-import LearnMore from "../about/LearnMore";
-import CreateExternalImages from "./helper/CreateExternalImages";
 import { notifications } from "@mantine/notifications";
 import CreateLocalImages from "./helper/CreateLocalImages";
 import SelectLayer from "./SelectLayer";
 import DeselectLayer from "./utils/DeselectLayer";
-import SelectEmoji from "./SelectEmoji";
-import { EmojiClickData } from "emoji-picker-react";
+import { type EmojiClickData } from "emoji-picker-react";
 import { getImagesWidthAndHeight } from "../../utils/imagesUtils";
 import useCurrentStickerStore from "../../store/currenStickerStore";
 import DropZoneFullScreen from "./helper/DropZoneFullScreen";
 import SaveToHistory from "./helper/SaveToHistory";
-import SelectHistorySticker from "./SelectHistorySticker";
 
 import { useTranslation } from "react-i18next";
 import ChangeLanguage from "../common/ChangeLanguage";
+
+const CreateExternalImages = lazy(() => import("./helper/CreateExternalImages"));
+const LearnMore = lazy(() => import("../about/LearnMore"));
+const SelectEmoji = lazy(() => import("./SelectEmoji"));
+const SelectHistorySticker = lazy(() => import("./SelectHistorySticker"));
 
 function CanvasBoard() {
     const { t } = useTranslation();
@@ -256,15 +257,19 @@ function CanvasBoard() {
                     callBackImageURL(imageURL);
                 }}
             />
-            <SelectEmoji
-                openComp="None"
-                opened={emojiOpened}
-                onClose={closeEmoji}
-                title={t("Add Emoji (Text)")}
-                addEmojiCb={(emoji: EmojiClickData) => {
-                    stickerContentHandlers.append(createText(emoji.emoji));
-                }}
-            />
+            {emojiOpened && (
+                <Suspense fallback={null}>
+                    <SelectEmoji
+                        openComp="None"
+                        opened
+                        onClose={closeEmoji}
+                        title={t("Add Emoji (Text)")}
+                        addEmojiCb={(emoji: EmojiClickData) => {
+                            stickerContentHandlers.append(createText(emoji.emoji));
+                        }}
+                    />
+                </Suspense>
+            )}
             <SelectCharactor
                 openComp="None"
                 opened={newStickerOpened}
@@ -274,25 +279,37 @@ function CanvasBoard() {
                     stickerContentHandlers.append(await createImages(v.img));
                 }}
             />
-            <CreateExternalImages
-                openComp="None"
-                opened={externalImageOpened}
-                onClose={closeExternalImage}
-                title={t("Upload URL Image")}
-                callBackImageURL={(imageURL: string) => {
-                    callBackImageURL(imageURL);
-                }}
-            />
-            <SelectHistorySticker
-                openComp="None"
-                opened={savedStickerOpened}
-                onClose={closeSavedSticker}
-                title={t("View Saved Stickers")}
-                setStickerCb={(sticker) => {
-                    stickerContentHandlers.setState(sticker);
-                }}
-            />
-            <LearnMore opened={learnMoreOpened} onClose={closeLearnMore} hideTrigger />
+            {externalImageOpened && (
+                <Suspense fallback={null}>
+                    <CreateExternalImages
+                        openComp="None"
+                        opened
+                        onClose={closeExternalImage}
+                        title={t("Upload URL Image")}
+                        callBackImageURL={(imageURL: string) => {
+                            callBackImageURL(imageURL);
+                        }}
+                    />
+                </Suspense>
+            )}
+            {savedStickerOpened && (
+                <Suspense fallback={null}>
+                    <SelectHistorySticker
+                        openComp="None"
+                        opened
+                        onClose={closeSavedSticker}
+                        title={t("View Saved Stickers")}
+                        setStickerCb={(sticker) => {
+                            stickerContentHandlers.setState(sticker);
+                        }}
+                    />
+                </Suspense>
+            )}
+            {learnMoreOpened && (
+                <Suspense fallback={null}>
+                    <LearnMore opened onClose={closeLearnMore} hideTrigger />
+                </Suspense>
+            )}
 
             <AppShell padding="md">
                 <AppShell.Header>
