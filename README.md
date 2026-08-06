@@ -45,6 +45,14 @@ MIT
 
 ## 🪵 Logs
 
+### v1.3.0
+
+- UI Layout changes
+- Upgrade packages
+- Fix bugs (Initial font loading issues)
+- Better phone / pad view
+- Add PWA
+
 ### v1.2.0
 
 - New UI Layout changes
