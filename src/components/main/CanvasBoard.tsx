@@ -7,7 +7,6 @@ import {
     Container,
     Group,
     Menu,
-    Text,
     ActionIcon,
     Tooltip,
     Divider,
@@ -34,7 +33,7 @@ import {
     IconFileSmile,
     IconLink,
     IconNotebook,
-    IconFolder,
+    IconPackage,
     IconPlus,
     IconSticker,
     IconTemplate,
@@ -68,6 +67,7 @@ import DropZoneFullScreen from "./helper/DropZoneFullScreen";
 import SaveToHistory from "./helper/SaveToHistory";
 
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import ChangeLanguage from "../common/ChangeLanguage";
 import ElementInspector from "./ElementInspector";
 import ResponsiveStage from "./ResponsiveStage";
@@ -87,6 +87,7 @@ const SelectHistorySticker = lazy(() => import("./SelectHistorySticker"));
 
 function CanvasBoard() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
     const stageRef = useRef<Konva.Stage>(null);
 
@@ -115,8 +116,8 @@ function CanvasBoard() {
         useDisclosure(false);
     const [learnMoreOpened, { open: openLearnMore, close: closeLearnMore }] = useDisclosure(false);
     const [inspectorOpened, { open: openInspector, close: closeInspector }] = useDisclosure(false);
-    const [projectsOpened, { open: openProjects, close: closeProjects }] = useDisclosure(false);
-    const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false);
+    const [projectsOpened, { open: _, close: closeProjects }] = useDisclosure(false);
+    const [exportOpened, { open: __, close: closeExport }] = useDisclosure(false);
     const [templatesOpened, { open: openTemplates, close: closeTemplates }] = useDisclosure(false);
     const [exportPreview, setExportPreview] = useState("");
     const [exportOptions, setExportOptions] = useState<ExportOptions>({
@@ -125,6 +126,20 @@ function CanvasBoard() {
         pixelRatio: 2,
         filename: "sekai-sticker",
     });
+
+    useEffect(() => {
+        if (!exportOpened || !stageRef.current || selectedId !== null) return;
+
+        const frame = requestAnimationFrame(() => {
+            if (stageRef.current) {
+                setExportPreview(
+                    renderStickerExport(stageRef.current, stickerContent, exportOptions),
+                );
+            }
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [exportOpened, exportOptions, selectedId, stickerContent]);
 
     // Check deselect click
     function checkDeselect(
@@ -272,13 +287,6 @@ function CanvasBoard() {
                 message: (error as Error).message,
             });
         }
-    }
-
-    async function openExportStudio() {
-        setSelectedId(null);
-        await timer(100);
-        setExportPreview(stageRef.current?.toDataURL({ pixelRatio: 1 }) ?? "");
-        openExport();
     }
 
     useHotkeys([
@@ -466,9 +474,33 @@ function CanvasBoard() {
                         }}
                     >
                         <Group gap="xs" wrap="nowrap">
-                            <Text fw={700} px={8} mt={4} visibleFrom="sm">
-                                <IconSticker size={16} />
-                            </Text>
+                            <Menu position="bottom-start" width={200} withinPortal={false}>
+                                <Menu.Target>
+                                    <ActionIcon
+                                        variant="subtle"
+                                        color="gray"
+                                        size={36}
+                                        aria-label={t("Open navigation menu")}
+                                    >
+                                        <IconSticker size={18} />
+                                    </ActionIcon>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                    <Menu.Label>{t("Sekai Sticker V2")}</Menu.Label>
+                                    <Menu.Item
+                                        leftSection={<IconCopyPlus size={14} />}
+                                        onClick={() => navigate("/batch")}
+                                    >
+                                        {t("Batch Maker")}
+                                    </Menu.Item>
+                                    <Menu.Item
+                                        leftSection={<IconPackage size={14} />}
+                                        onClick={() => navigate("/packs")}
+                                    >
+                                        {t("Batch Export Saved Stickers")}
+                                    </Menu.Item>
+                                </Menu.Dropdown>
+                            </Menu>
                             <Menu
                                 // trigger="hover"
                                 openDelay={80}
@@ -484,12 +516,6 @@ function CanvasBoard() {
                                     </Button>
                                 </Menu.Target>
                                 <Menu.Dropdown>
-                                    <Menu.Item
-                                        leftSection={<IconAdjustments size={14} />}
-                                        onClick={openExportStudio}
-                                    >
-                                        {t("Export studio")}
-                                    </Menu.Item>
                                     <Menu.Item
                                         leftSection={<IconDownload size={14} />}
                                         onClick={() => downloadCurrentPng()}
@@ -526,6 +552,9 @@ function CanvasBoard() {
                                     >
                                         {t("Starter templates")}
                                     </Menu.Item>
+
+                                    <Menu.Divider />
+                
                                     <Menu.Item
                                         leftSection={<IconPlus size={14} />}
                                         onClick={() => addDefaultTextLayer()}
@@ -576,12 +605,6 @@ function CanvasBoard() {
                                     </Button>
                                 </Menu.Target>
                                 <Menu.Dropdown>
-                                    <Menu.Item
-                                        leftSection={<IconFolder size={14} />}
-                                        onClick={openProjects}
-                                    >
-                                        {t("Manage projects")}
-                                    </Menu.Item>
                                     <Menu.Item
                                         leftSection={<IconSticker size={14} />}
                                         onClick={openSavedSticker}

@@ -1,14 +1,20 @@
 import { Anchor, Box, Container, Group, Text } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { IconSticker } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 
 import classes from "../../style/FooterSimple.module.css";
 import ColorToggleBtn from "./ColorToggleBtn";
 
-const links = [{ link: "/", label: "Home", format: "internal" }];
+const links = [
+    { link: "/", label: "Home", format: "internal" },
+    { link: "/batch", label: "Batch Maker", format: "internal" },
+    { link: "/packs", label: "Batch Export Saved Stickers", format: "internal" },
+];
 
 function FooterComp() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const items = links.map((link) => (
         <Anchor<"a">
@@ -25,7 +31,7 @@ function FooterComp() {
             }}
             size="sm"
         >
-            {link.label}
+            {t(link.label)}
         </Anchor>
     ));
 

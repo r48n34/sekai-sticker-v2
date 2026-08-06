@@ -29,6 +29,27 @@ export function calculateContentBounds(layers: StickerObject[]): ExportBounds {
     return { x, y, width: Math.max(1, right - x), height: Math.max(1, bottom - y) };
 }
 
+export function calculateRenderedContentBounds(stage: Konva.Stage): ExportBounds | null {
+    const contentNodes = stage.find<Konva.Node>((node: Konva.Node) => {
+        const className = node.getClassName();
+        return (
+            (className === "Text" || className === "Image") &&
+            node.isVisible() &&
+            node.getAbsoluteOpacity() > 0
+        );
+    });
+
+    if (contentNodes.length === 0) return null;
+
+    const boxes = contentNodes.map((node) => node.getClientRect({ relativeTo: stage }));
+    const x = Math.floor(Math.min(...boxes.map((box) => box.x)));
+    const y = Math.floor(Math.min(...boxes.map((box) => box.y)));
+    const right = Math.ceil(Math.max(...boxes.map((box) => box.x + box.width)));
+    const bottom = Math.ceil(Math.max(...boxes.map((box) => box.y + box.height)));
+
+    return { x, y, width: Math.max(1, right - x), height: Math.max(1, bottom - y) };
+}
+
 export function renderStickerExport(
     stage: Konva.Stage,
     layers: StickerObject[],
@@ -37,7 +58,7 @@ export function renderStickerExport(
     const bounds =
         options.bounds === "canvas"
             ? { x: 0, y: 0, width: CONFIGS.stageWidth, height: CONFIGS.stageHeight }
-            : calculateContentBounds(layers);
+            : (calculateRenderedContentBounds(stage) ?? calculateContentBounds(layers));
     const scene = stage.toCanvas({ ...bounds, pixelRatio: options.pixelRatio });
 
     if (!options.background) return scene.toDataURL("image/png");

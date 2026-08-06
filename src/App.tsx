@@ -19,6 +19,8 @@ import Layout from "./components/common/Layout";
 import PwaUpdatePrompt from "./components/common/PwaUpdatePrompt";
 
 const MainPage = lazy(() => import("./pages/MainPage"));
+const BatchMakerPage = lazy(() => import("./pages/BatchMakerPage"));
+const BatchExportSavedStickersPage = lazy(() => import("./pages/StickerPackPage"));
 
 const router = createBrowserRouter([
     {
@@ -28,6 +30,14 @@ const router = createBrowserRouter([
             {
                 path: "/",
                 element: <MainPage />,
+            },
+            {
+                path: "/batch",
+                element: <BatchMakerPage />,
+            },
+            {
+                path: "/packs",
+                element: <BatchExportSavedStickersPage />,
             },
         ],
     },

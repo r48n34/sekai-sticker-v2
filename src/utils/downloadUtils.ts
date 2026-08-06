@@ -13,6 +13,12 @@ export function downloadFile(uri: string, name: string) {
     document.body.removeChild(link);
 }
 
+export function downloadBlob(blob: Blob, name: string) {
+    const uri = URL.createObjectURL(blob);
+    downloadFile(uri, name);
+    window.setTimeout(() => URL.revokeObjectURL(uri), 0);
+}
+
 export async function dataURLToBlob(uri: string) {
     const res = await fetch(uri);
     return await res.blob();

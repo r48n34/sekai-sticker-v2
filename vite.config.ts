@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import Sitemap from "vite-plugin-sitemap";
 
-const dynamicRoutes = ["/"];
+const dynamicRoutes = ["/", "/batch"];
 
 export default defineConfig(({ command, mode }) => {
     const isTest = mode === "test" || process.env.VITEST === "true";
