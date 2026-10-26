@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { codeInspectorPlugin } from "code-inspector-plugin";
-import { reactClickToComponent } from "vite-plugin-react-click-to-component";
+// import { reactClickToComponent } from "vite-plugin-react-click-to-component";
+import { tabToComponents } from "tab-to-components";
 
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -23,7 +24,10 @@ export default defineConfig(({ command, mode }) => {
         plugins: [
             ...(isDevelopmentServer
                 ? [
-                      reactClickToComponent(),
+                      // reactClickToComponent(),
+                      tabToComponents({
+                          editor: process.env.LAUNCH_EDITOR || "code",
+                      }),
                       codeInspectorPlugin({
                           bundler: "vite",
                       }),
