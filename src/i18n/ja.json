@@ -215,5 +215,14 @@
     "Batch export settings": "一括書き出し設定",
     "ZIP name": "ZIP名",
     "Stickers to export": "書き出すステッカー",
-    "Add the current canvas or a saved sticker to start an export": "現在のキャンバスまたは保存済みステッカーを追加してください"
+    "Add the current canvas or a saved sticker to start an export": "現在のキャンバスまたは保存済みステッカーを追加してください",
+    "My Projects": "マイプロジェクト",
+    "Export Studio": "書き出しスタジオ",
+    "Something went wrong": "問題が発生しました",
+    "The page hit an unexpected error. Your saved work is still on this device.": "予期しないエラーが発生しました。保存した作品はこの端末に残っています。",
+    "Try again": "もう一度試す",
+    "Reload page": "ページを再読み込み",
+    "Saved sticker history is full": "保存済みステッカーの履歴が上限に達しました",
+    "The oldest saved sticker was removed to make room for the new one.": "新しいステッカーを保存するため、最も古いステッカーを削除しました。",
+    "Could not prepare this template. Please try again.": "テンプレートを準備できませんでした。もう一度お試しください。"
 }

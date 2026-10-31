@@ -31,5 +31,10 @@
             ]
         }
     ],
-    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    "rewrites": [
+        {
+            "source": "/((?!assets/|img/).*)",
+            "destination": "/index.html"
+        }
+    ]
 }

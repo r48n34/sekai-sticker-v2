@@ -1,10 +1,13 @@
 import { Outlet } from "react-router-dom";
+import ErrorBoundary from "./ErrorBoundary";
 import FooterComp from "./FooterComp";
 
 function Layout() {
     return (
         <>
-            <Outlet />
+            <ErrorBoundary>
+                <Outlet />
+            </ErrorBoundary>
             <FooterComp />
         </>
     );

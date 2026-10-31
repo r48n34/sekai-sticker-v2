@@ -18,6 +18,9 @@ URL: https://sekai-sticker.vercel.app/
 - ✅ Copy Layer
 - ✅ Layer handle
 - ✅ Save and copy PNG
+- ✅ Export Studio (canvas / content bounds, custom background, 1×–3× scale)
+- ✅ Named projects (save, load, delete, import / export as a portable JSON file)
+- ✅ Starter templates
 - ✅ Emoji sticker
 - ✅ Responsive UI
 - ✅ Night / Sky Theme
@@ -44,6 +47,21 @@ https://github.com/TheOriginalAyaka/sekai-stickers
 MIT
 
 ## 🪵 Logs
+
+### v1.4.0
+
+- Unlock **My Projects** and **Export Studio**: both drawers existed but nothing in the UI could
+  open them. They are now reachable from the Insert / Export menus and from the mobile menu.
+- Crash safety: an error boundary wraps the routed pages, so a render error shows a retry / reload
+  screen instead of a blank white page.
+- Saved sticker history is capped at 60 entries; the oldest one is dropped with a notice, so
+  `localStorage` can no longer grow until it hits the quota.
+- SEO / sharing: Open Graph and Twitter card meta, canonical URL, a generated 1200×630 share image,
+  and `/packs` is included in the sitemap.
+- Starter templates fixed: previews no longer break, and each character keeps its real aspect ratio
+  (Emu 256×225, Kanade 209×248 instead of a stretched 275×256).
+- Hardened `vercel.json`: missing `/assets/` and `/img/` files return a 404 instead of the app HTML,
+  so a failed image request can no longer be cached for days and render as a permanent broken image.
 
 ### v1.3.0
 

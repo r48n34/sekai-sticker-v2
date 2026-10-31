@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { devtools, persist } from "zustand/middleware";
 import { normalizeStickerList, StickerObject } from "../utils/createSticker";
+import { applySavedStickerLimit } from "../utils/savedStickerLimit";
 
 interface HistoryStickerState {
     histStickerArray: StickerObject[][];
@@ -35,7 +36,10 @@ const useHistoryStickerStore = create<HistoryStickerState>()(
                         );
 
                         return {
-                            histStickerArray: [...state.histStickerArray, validStick],
+                            histStickerArray: applySavedStickerLimit([
+                                ...state.histStickerArray,
+                                validStick,
+                            ]),
                         };
                     });
                 },

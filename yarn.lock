@@ -4998,10 +4998,10 @@ symbol-tree@^3.2.4:
   resolved "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.4.tgz"
   integrity sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==
 
-tab-to-components@^0.4.1:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/tab-to-components/-/tab-to-components-0.4.1.tgz#70e0c60e796afcec948d0183ec0d00c3ac8ee175"
-  integrity sha512-2DKutPaUHDzHkZLWYNKt58/V2WnjGq5t81/VCDSXt+6x3Olt4pqUUpocZZKdpSXtMvWdD62e7NfgAyE2/VNnxQ==
+tab-to-components@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/tab-to-components/-/tab-to-components-0.5.0.tgz#7a0f12bc1e2d72957b0637c461fbda0c4148b209"
+  integrity sha512-xIaDJEcQW+kgbtWMGUb9o9+F3Ge3svz5bgeVagyEFoxCHZaSV/J1B23Y0k4xb9xmBqo7aLwvRZubwv0q2I7rJg==
   dependencies:
     "@babel/parser" "^7.29.11"
     "@babel/types" "^7.29.11"

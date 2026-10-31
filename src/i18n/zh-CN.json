@@ -215,5 +215,14 @@
     "Batch export settings": "批量导出设置",
     "ZIP name": "ZIP 名称",
     "Stickers to export": "待导出贴纸",
-    "Add the current canvas or a saved sticker to start an export": "添加当前画布或已保存贴纸以开始导出"
+    "Add the current canvas or a saved sticker to start an export": "添加当前画布或已保存贴纸以开始导出",
+    "My Projects": "我的项目",
+    "Export Studio": "导出工作台",
+    "Something went wrong": "出现了一些问题",
+    "The page hit an unexpected error. Your saved work is still on this device.": "页面遇到意外错误。你保存的作品仍在这台设备上。",
+    "Try again": "重试",
+    "Reload page": "重新加载页面",
+    "Saved sticker history is full": "已保存贴纸历史已满",
+    "The oldest saved sticker was removed to make room for the new one.": "已移除最旧的贴纸，为新的贴纸腾出空间。",
+    "Could not prepare this template. Please try again.": "无法准备此模板，请重试。"
 }

@@ -215,5 +215,14 @@
     "Batch export settings": "Batch export settings",
     "ZIP name": "ZIP name",
     "Stickers to export": "Stickers to export",
-    "Add the current canvas or a saved sticker to start an export": "Add the current canvas or a saved sticker to start an export"
+    "Add the current canvas or a saved sticker to start an export": "Add the current canvas or a saved sticker to start an export",
+    "My Projects": "My Projects",
+    "Export Studio": "Export Studio",
+    "Something went wrong": "Something went wrong",
+    "The page hit an unexpected error. Your saved work is still on this device.": "The page hit an unexpected error. Your saved work is still on this device.",
+    "Try again": "Try again",
+    "Reload page": "Reload page",
+    "Saved sticker history is full": "Saved sticker history is full",
+    "The oldest saved sticker was removed to make room for the new one.": "The oldest saved sticker was removed to make room for the new one.",
+    "Could not prepare this template. Please try again.": "Could not prepare this template. Please try again."
 }

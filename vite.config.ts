@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { codeInspectorPlugin } from "code-inspector-plugin";
+// import { codeInspectorPlugin } from "code-inspector-plugin";
 // import { reactClickToComponent } from "vite-plugin-react-click-to-component";
 import { tabToComponents } from "tab-to-components";
 
@@ -7,40 +7,40 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import Sitemap from "vite-plugin-sitemap";
 
-const dynamicRoutes = ["/", "/batch"];
+const dynamicRoutes = ["/batch", "/packs"];
 
 export default defineConfig(({ command, mode }) => {
     const isTest = mode === "test" || process.env.VITEST === "true";
     const isDevelopmentServer = command === "serve" && !isTest;
     const isProductionBuild = command === "build" && !isTest;
 
-    if (!process.env.VITE_LAUNCH_EDITOR) {
-        process.env.LAUNCH_EDITOR = "code";
-    } else {
-        process.env.LAUNCH_EDITOR = process.env.VITE_LAUNCH_EDITOR;
-    }
+    // if (!process.env.VITE_LAUNCH_EDITOR) {
+    //     process.env.LAUNCH_EDITOR = "code";
+    // } else {
+    //     process.env.LAUNCH_EDITOR = process.env.VITE_LAUNCH_EDITOR;
+    // }
 
     return {
         plugins: [
             ...(isDevelopmentServer
                 ? [
-                      // reactClickToComponent(),
-                      tabToComponents({
-                          editor: process.env.LAUNCH_EDITOR || "code",
-                      }),
-                      codeInspectorPlugin({
-                          bundler: "vite",
-                      }),
-                  ]
+                    // reactClickToComponent(),
+                    tabToComponents({
+                        editor: process.env.LAUNCH_EDITOR || "code",
+                    }),
+                    //   codeInspectorPlugin({
+                    //       bundler: "vite",
+                    //   }),
+                ]
                 : []),
             react(),
             ...(isProductionBuild
                 ? [
-                      Sitemap({
-                          hostname: "https://sekai-sticker.vercel.app/",
-                          dynamicRoutes,
-                      }),
-                  ]
+                    Sitemap({
+                        hostname: "https://sekai-sticker.vercel.app/",
+                        dynamicRoutes,
+                    }),
+                ]
                 : []),
             VitePWA({
                 disable: isTest,

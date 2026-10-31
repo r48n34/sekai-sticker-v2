@@ -31,6 +31,7 @@ import {
     IconDownload,
     IconDotsVertical,
     IconFileSmile,
+    IconFolder,
     IconLink,
     IconNotebook,
     IconPackage,
@@ -116,8 +117,8 @@ function CanvasBoard() {
         useDisclosure(false);
     const [learnMoreOpened, { open: openLearnMore, close: closeLearnMore }] = useDisclosure(false);
     const [inspectorOpened, { open: openInspector, close: closeInspector }] = useDisclosure(false);
-    const [projectsOpened, { open: _, close: closeProjects }] = useDisclosure(false);
-    const [exportOpened, { open: __, close: closeExport }] = useDisclosure(false);
+    const [projectsOpened, { open: openProjects, close: closeProjects }] = useDisclosure(false);
+    const [exportOpened, { open: openExport, close: closeExport }] = useDisclosure(false);
     const [templatesOpened, { open: openTemplates, close: closeTemplates }] = useDisclosure(false);
     const [exportPreview, setExportPreview] = useState("");
     const [exportOptions, setExportOptions] = useState<ExportOptions>({
@@ -499,6 +500,13 @@ function CanvasBoard() {
                                     >
                                         {t("Batch Export Saved Stickers")}
                                     </Menu.Item>
+                                    <Menu.Divider />
+                                    <Menu.Item
+                                        leftSection={<IconFolder size={14} />}
+                                        onClick={openProjects}
+                                    >
+                                        {t("My Projects")}
+                                    </Menu.Item>
                                 </Menu.Dropdown>
                             </Menu>
                             <Menu
@@ -527,6 +535,16 @@ function CanvasBoard() {
                                         onClick={() => copyCurrentPng()}
                                     >
                                         {t("Copy PNG to clipboard")}
+                                    </Menu.Item>
+                                    <Menu.Divider />
+                                    <Menu.Item
+                                        leftSection={<IconAdjustments size={14} />}
+                                        onClick={() => {
+                                            setSelectedId(null);
+                                            openExport();
+                                        }}
+                                    >
+                                        {t("Export Studio")}
                                     </Menu.Item>
                                 </Menu.Dropdown>
                             </Menu>
@@ -671,6 +689,22 @@ function CanvasBoard() {
                                     onClick={openLearnMore}
                                 >
                                     {t("General information")}
+                                </Menu.Item>
+                                <Menu.Divider />
+                                <Menu.Item
+                                    leftSection={<IconFolder size={14} />}
+                                    onClick={openProjects}
+                                >
+                                    {t("My Projects")}
+                                </Menu.Item>
+                                <Menu.Item
+                                    leftSection={<IconAdjustments size={14} />}
+                                    onClick={() => {
+                                        setSelectedId(null);
+                                        openExport();
+                                    }}
+                                >
+                                    {t("Export Studio")}
                                 </Menu.Item>
                             </Menu.Dropdown>
                         </Menu>
